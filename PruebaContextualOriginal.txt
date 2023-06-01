@@ -1,0 +1,113 @@
+class AllProds
+{
+  int nPoints /*= 2*/;
+  char exclaim /*= '!'*/;
+  /*float*/ double i;
+  int test2;
+  
+  class Point {
+     int x, y;
+     /*float*/ double i;
+  }
+
+  char[] msg;
+  Point[] pArr; //ARREGLOS SOLO DE INT Y CHAR
+  bool test1;
+
+  void WriteError ()
+  {
+    int i;
+    bool test2;
+    
+    double b;
+    b = (double)i;
+    b = (string)i;
+      
+    i = 0;
+    i = (double)i;
+    i = 10;
+    
+    test1 = true;   //verificaci�n de alcances -----FUNCIONA CORRECTAMENTE-----
+    test2 = test1;  //verificaci�n de alcances cuando hay una global llamada "test2" -----FUNCIONA CORRECTAMENTE-----
+    while(i<len(msg)){write(msg[i]);i++;}
+
+    for(i;i<len(msg);i++;){write(msg[i]);}
+      write(exclaim);
+      while (i > 0) {
+        i--;
+        if (i < 3 && test1==true) break;    
+        write(msg[i], 2);
+      }
+  }
+
+  int GetX (Point p) { return p.x; } // error de tipos, en caso de reconocerlo, cambiar a "return p.x" -----FUNCIONA CORRECTAMENTE-----
+
+  void SetX (int x, Point p) {
+    if (x > -10 && x <= 9 ||
+        x == 4*3/4%4+12-11*(2147483647/(-2147483647-1)%2) ){
+      p.x = x;
+	  i = x; //error de tipos, en caso de fallo cambiar la "x" por un numero float -----FUNCIONA CORRECTAMENTE-----
+	  }
+    else 
+         i= WriteError(3); // error de alcances porque no existe este parametro en la definicion -----FUNCIONA CORRECTAMENTE-----
+	
+	return i; //error porque no es funcion; -----FUNCIONA CORRECTAMENTE-----
+  }
+
+
+  int SetMsg () {
+    msg = new char[5]; //quienes SI permitieron esto, lo mantienen, los que no, lo quitan -----FUNCIONA CORRECTAMENTE-----
+    msg[0] = 'E';
+    msg[1] = 'r';
+    msg[2] = 'r';
+    msg[3] = 'r';
+    msg[4] = msg[3];
+    write(len(msg),1); //verificacion de m�todos predefinidos... cambian el formato si es que lo definieron diferente -----FUNCIONA CORRECTAMENTE-----
+	
+	//verificar error de no existencia de retorno en funcion que si lo requiere -----FUNCIONA CORRECTAMENTE-----
+  }
+
+  void SetPoints ()
+  {
+    int i;
+    pArr = new Point[nPoints];
+    i = 0;
+    while (i < len(pArr)) {
+      //TODOS ESTOS GENERAN ERRORES POR EL ARREGLO NO VALIDO
+      pArr[i] = new Point; //error de tipos por la definicion de clases que solo permiten tipos simples
+      pArr[i].x = i;
+      pArr[i].i = 3.14; //depende del formato de la constante float que definieron se usa punto o coma.
+      i++;
+    }
+  }
+
+  void metodo(int x, char y, bool z)
+  {
+     write("prueba de cadenas en print");
+  }
+
+  void Main ()
+  {
+    int i;
+    SetMsg(); //puede o no ser error que para la llamada a una funcion no se utilice necesariamente su retorno --NO ES ERROR--
+    SetPoints();
+    read(i);
+    if (i < nPoints) {
+      write(GetX(pArr[i]));
+      write(pArr[i].y.x); //error de tipos. Corregir quitando el .x al final ---ARREGLO NO VALIDO---
+
+      char i;	//no deber�a dar error porque es un contexto interno diferente al contexto local del Main -----FUNCIONA CORRECTAMENTE-----
+      i = ':';
+      write(i,3);
+      metodo(10,i,true); //no debe dar error por el tipo de i -----FUNCIONA CORRECTAMENTE-----
+
+    }
+    else
+      WriteError();
+    write('\n');
+
+  }
+}
+
+// ANOTAR SUS COMENTARIOS EN MAYUSCULA Y NO QUITAR NADA DE LO QUE VIENE EN EL ARCHIVO SINO SOLO COMENTARLO PERO A LA VEZ COLOCAR EL EQUIVALENTE CORRECTO
+// CUALQUIER COSA QUE SEA ERROR MIO AL MOMENTO DE HACER LA PRUEBA, FAVOR CORREGIRLO Y ANOTARLO

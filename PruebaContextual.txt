@@ -1,0 +1,145 @@
+class AllProds
+{
+  int nPoints /*= 2*/; //NO SE PUEDEN HACER ASIGNACIONES FUERA DE METODOS
+  char exclaim /*= '!'*/; //NO SE PUEDEN HACER ASIGNACIONES FUERA DE METODOS
+  //float i; NO EXISTE EL TIPO FLOAT EN ESE CASO SERÍA DOUBLE
+  //VERSIÓN CORRECTA 
+  double i;
+  int test2;
+  
+  class Point {
+     int x, y;
+     //float i; NO EXISTE EL TIPO FLOAT EN ESE CASO SERÍA DOUBLE
+     //VERSIÓN CORRECTA 
+     double i;
+  }
+
+  char[] msg;
+  Point[] pArr; //MUESTRA ERROR POR QUE POINT NO ES UN TIPO VALIDO PARA UN ARREGLO
+  boolean test1;
+
+  void WriteError ()
+  {
+    int i; //GENERA CONFLICTO AL REDECLARAR LA VARIABLE GLOBAL, PROBLEMA DE NIVELES!!!
+    boolean test2; //GENERA CONFLICTO AL REDECLARAR LA VARIABLE GLOBAL, PROBLEMA DE NIVELES!!!
+    
+    //CORRECIÓN (DECLARAR LAS VARIABLES CON NOMBRES DISTINTOS)
+    int i1;
+    boolean test22, test11;
+     
+    i = 0; //PUEDE QUE INDIQUE QUE LA VARIABLE NO HA SIDO DECLARADA ESTO SE DEBE A UN ERROR EN EL IF DONDE SE 
+    //GENERA EL MENSAJE DE ERROR, INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL
+    test1 = true;   //verificaci�n de alcances 
+    //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL
+    test2 = test1;  //verificaci�n de alcances cuando hay una global llamada "test2" 
+    //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL
+    
+    //CORRECCIÓN (MISMO CÓDIGO CON LAS NUEVAS VARIABLES LOCALES)
+    i1 = 0;
+    test11 = true;
+    test22 = test11;
+    
+    while(i<len(msg)){write(msg[i]);i++;}
+    //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL i QUE ES DOUBLE
+    //ADEMÁS GENERA CORRECTAMENTE EL ERROR: "msg[i]" no declarado en el metodo
+    //SOLAMENTE QUE POR ERROR IMPRIME EL TOKEN DEL METODO EN LUGAR DE SOLO EL NOMBRE
+    //POR ERROR RECONOCE EL IDENT DEL METODO (LEN) COMO UN RETORNO E INDICA QUE NO ES PERMITIDA FUERA DE METODOS
+    
+    //VERSIÓN CORRECTA
+    while(i1<len(msg)){write(msg[i1]);i1++;} 
+    //ADEMÁS GENERA CORRECTAMENTE EL ERROR: "msg[i]" no declarado en el metodo
+    //SOLAMENTE QUE POR ERROR IMPRIME EL TOKEN DEL METODO EN LUGAR DE SOLO EL NOMBRE
+    //POR ERROR RECONOCE EL IDENT DEL METODO (LEN) COMO UN RETORNO E INDICA QUE NO ES PERMITIDA FUERA DE METODOS
+    
+    for(i;i<len(msg);i++;){write(msg[i]);}
+    //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL i QUE ES DOUBLE
+    //ADEMÁS GENERA CORRECTAMENTE EL ERROR: "msg[i]" no declarado en el metodo
+    //SOLAMENTE QUE POR ERROR IMPRIME EL TOKEN DEL METODO EN LUGAR DE SOLO EL NOMBRE
+    //POR ERROR RECONOCE EL IDENT DEL METODO (LEN) COMO UN RETORNO E INDICA QUE NO ES PERMITIDA FUERA DE METODOS
+      write(exclaim);
+      while (i > 0) { //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL i QUE ES DOUBLE
+        i--;
+        if (i < 3 && test1==true) break; //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL i QUE ES DOUBLE
+        //INDICA QUE LA CONDICIÓN DEL IF ES NULA DEBIDO AL CONFLICTO ANTERIOR
+        write(msg[i], 2); //GENERA CORRECTAMENTE EL ERROR: "msg[i]" no declarado en el metodo
+      }
+  }
+
+  int GetX (Point p) { return p.i; } // error de tipos, en caso de reconocerlo, cambiar a "return p.x"
+  //int GetX (Point p) { return p.x; } VERSIÓN SIN ERROR DE TIPOS
+
+  void SetX (int x, Point p) {
+    if (x > -10 && x <= 9 || x == 4*3/4%4+12-11*(2147483647/(-2147483647-1)%2) )
+    //HAY ALGÚN ERROR EN LA COMPARACIÓN DE TIPOS DE LAS EXPRESIONES, POR LO QUE INDICA ERROR DE TIPOS Y OPERADORES
+      { //AL SER VARIAS STATEMENT EN EL IF DEBEN IR ENTRE PARENTESIS
+      p.x = x;
+      //PUEDE INDICAR QUE i NO HA SIDO DECLARADA DEBIDO A UN ERROR DE NIVELES
+	  i = x; //error de tipos, en caso de fallo cambiar la "x" por un numero float
+	  //GENERA ERROR CORRECTAMENTE
+	  i = 0.2; //CAMBIO DE LA x EN LA EXPRESION ANTERIOR
+	  }
+      else i= WriteError(3); // error de alcances porque no existe este parametro en la definicion
+	//NO GENERA ERROR
+	return i; //error porque no es funcion; //NO SE CODIFICÓ ESTE TIPO DE RETORNO
+  }
+
+
+  int SetMsg () {
+    msg = new char[5]; //quienes SI permitieron esto, lo mantienen, los que no, lo quitan
+    //EXISTE UN PROBLEMA QUE NO PERMITE ASIGNAR POSICIONES DE UN ARREGLO
+    msg[0] = 'E';
+    msg[1] = 'r';
+    msg[2] = 'r';
+    msg[3] = 'r';
+    msg[4] = msg[3];
+    write(len(msg),1); //verificacion de m�todos predefinidos... cambian el formato si es que lo definieron diferente
+	
+	//verificar error de no existencia de retorno en funcion que si lo requiere
+  }
+
+  void SetPoints ()
+  {
+    int i; //INDICA QUE SE REDECLARA LA VARIABLE POR EL CONFLICTO CON LA VARIABLE GLOBAL
+    pArr = new Point[nPoints]; //INDICA QUE LA VARIABLE NO FUE DECLARADA (ESTA LINEA SE COMENTÓ POR QUE NO SE PERMITE EL TIPO EN UN ARREGLO)
+    //ADEMÁS INDICA QUE CON LA FORMA DE DECLARACIÓN NEW SE ESPERA UNA CLASE O ARREGLO
+    i = 0; //ERROR DE TIPOS POR CONFLICTO CON VARIABLE GLOBAL i
+    while (i < len(pArr)) { //ERROR INDICA QUE LA VARIABLE pArr ES INVALIDA (NO FUE DECLARADA)
+      pArr[i] = new Point; //error de tipos por la definicion de clases que solo permiten tipos simples
+      //ERROR DE TIPOS CORRECTO
+      pArr[i].x = i; //ERROR INDICA QUE LA VARIABLE NO SE DECLARÓ Y ERROR DE TIPOS
+      pArr[i].i = 3.14; //depende del formato de la constante float que definieron se usa punto o coma.
+      //ERROR INDICA QUE LA VARIABLE NO SE DECLARÓ Y ERROR DE TIPOS
+      i++;
+    }
+  }
+
+  void metodo(int x, char y, bool z)
+  {
+     write("prueba de cadenas en print");
+  }
+
+  void Main ()
+  {
+    int i; //INDICA QUE SE REDECLARA LA VARIABLE POR EL CONFLICTO CON LA VARIABLE GLOBAL
+    SetMsg(); //puede o no ser error que para la llamada a una funcion no se utilice necesariamente su retorno 
+    SetPoints();
+    read(i);
+    if (i < nPoints) {
+      write(GetX(pArr[i])); //INDICA UN ERROR DE TIPOS DEBIDO AL CONFLICTO CON LA VARIABLE GLOBAL i QUE ES DOUBLE
+      write(pArr[i].y.x); //error de tipos. Corregir quitando el .x al final
+
+      char i;	//no deber�a dar error porque es un contexto interno diferente al contexto local del Main
+      i = ':';
+      write(i,3);
+      metodo(10,i,true); //no debe dar error por el tipo de i
+
+    }
+    else
+      WriteError();
+    write('\n');
+
+  }
+}
+
+// ANOTAR SUS COMENTARIOS EN MAYUSCULA Y NO QUITAR NADA DE LO QUE VIENE EN EL ARCHIVO SINO SOLO COMENTARLO PERO A LA VEZ COLOCAR EL EQUIVALENTE CORRECTO
+// CUALQUIER COSA QUE SEA ERROR MIO AL MOMENTO DE HACER LA PRUEBA, FAVOR CORREGIRLO Y ANOTARLO

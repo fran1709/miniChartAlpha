@@ -1,0 +1,59 @@
+using otraClase;
+
+class P
+{
+	class Table {
+		int[] pos;
+		int[] neg;
+		int elnumero;
+	}
+	
+	class Table {
+    	bool isTable;
+    	int numero;
+    }
+	
+	Table val;
+	//int GetX (Table p, int x) { GetX = 0; }
+	//int GetY(bool isY, int y) { y = 0; }
+	
+  void Main ()
+	{
+		int x, i;
+		int x;
+		num elNumero;
+		GetX(x,i);
+		GetX(x,i,val);
+		GetX = 10;
+		
+		val.elnumero = 10;
+	
+		//---------- Initialize val ----------
+		val = new Table;
+		val = x;
+		val.pos = new int[]; val.neg = new int[size];
+		miNombre = "José";
+		i = (int)0.0;
+		for(i;i<len(msg);i++;){write(msg[i]);} 
+		while (i < size) {
+			add(val.pos,0); val.neg[i] = 0;
+	
+			i++;	
+		}
+
+		/*---------- Read /*values*/ ---------- */
+		read(x);
+		char[] array1, array2;
+		array1 = array2;
+		while (-size < x && x < size) {
+			if (0 <= x) val.pos[x]++;
+			else val.neg[x]++;
+			read(x);
+	        write("Valor de x: "); write(x,2);
+		}
+	}
+	
+	void Main (){write("Hola Mundo");}
+	
+}
+
