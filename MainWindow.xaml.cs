@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -24,7 +25,7 @@ namespace miniChartAlpha
     {
         private Type pointType;
         private object ptInstance;
-        private CSharpContextual visitor;
+        private CodeGen visitor;
         public MainWindow() 
         {
             // El System.Diagnostics.Debug.WriteLine es para imprimir en la consola del debugger.
@@ -151,28 +152,30 @@ namespace miniChartAlpha
                 consola.Show();
             }
             else
-            {
-                visitor = new CSharpContextual();
+            {   
+                //Ejecución de analisis contextual
+                var mv = new CSharpContextual();
+                mv.Visit(treeContext);
+                
+                visitor = new CodeGen();
+
                 // Tercera etapa
-                pointType = (Type)visitor.Visit(treeContext).GetType();
-                
+                pointType = (Type)visitor.Visit(treeContext);
                 ptInstance = Activator.CreateInstance(pointType);
+                pointType.InvokeMember("main",
+                    BindingFlags.InvokeMethod,
+                    null,
+                    ptInstance,
+                    new object[0]);
+                /*Process myProcess = new Process();
+                myProcess.StartInfo.UseShellExecute = false;
+                myProcess.StartInfo.FileName = @"../../bin/Debug/test.exe";
+                myProcess.StartInfo.RedirectStandardOutput = true;
+                myProcess.Start();
+                            
+                myProcess.StandardOutput.ReadToEnd();
+                myProcess.WaitForExit();*/
                 
-                /* MethodInfo mainMethod = pointType.GetMethod("Main", BindingFlags.Public | BindingFlags.Instance);
-                 if (mainMethod != null)
-                 {
-                     mainMethod.Invoke(ptInstance, null);
-                     consola.SalidaConsola.Text += "Lectura correcta!";
-                 }
-                 else
-                 {
-                     consola.SalidaConsola.Text += "Error: No se encontró el método Main en la clase prueba.";
-                 } */
-                 pointType.InvokeMember("main",
-                     BindingFlags.InvokeMethod,
-                     null,
-                     ptInstance,
-                     new object[0]);
             }
         }
     }

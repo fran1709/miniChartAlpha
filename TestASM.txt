@@ -1,8 +1,11 @@
 class Prueba
 {
+    void hola ()
+    {
+    }
 	void main ()
     {
-        Console.WriteLine("Hola Mundo");
+       
     }
 
 }

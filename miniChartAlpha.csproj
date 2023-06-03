@@ -130,6 +130,7 @@
         <Compile Include="Consola.xaml.cs">
           <DependentUpon>Consola.xaml</DependentUpon>
         </Compile>
+        <Compile Include="Logica\CodeGen.cs" />
         <Compile Include="Logica\CSharpContextual.cs" />
         <Compile Include="Logica\CSTablaSimbolos.cs" />
         <Compile Include="Logica\MiniCSharpParser.cs" />
