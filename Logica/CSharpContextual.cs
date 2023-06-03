@@ -14,44 +14,10 @@ namespace miniChartAlpha.Logica
     {
         public CSTablaSimbolos laCsTablaSimbolos;
 
-        // Tercera etapa 
-        private Type pointType;
-        private string asmFileName = "TestASM.exe";
-        private AssemblyName myAsmName = new AssemblyName();
-
-        private AppDomain currentDom = Thread.GetDomain();
-        private AssemblyBuilder myAsmBldr;
-
-        private ModuleBuilder myModuleBldr;
-
-        private TypeBuilder myTypeBldr;
-        private ConstructorInfo objCtor = null;
-
-        private MethodInfo writeMI, writeMS;
-
-        private MethodBuilder pointMainBldr, currentMethodBldr;
-
-        private List<MethodBuilder> metodosGlobales;
-
-        private bool isArgument = false;
-
         public CSharpContextual()
         {
             laCsTablaSimbolos = new CSTablaSimbolos();
-
-            // Tercera etapa
-            metodosGlobales = new List<MethodBuilder>();
-
             
-
-            //inicializar writeline para string
-
-            writeMI = typeof(Console).GetMethod(
-                "WriteLine",
-                new Type[] { typeof(int) });
-            writeMS = typeof(Console).GetMethod(
-                "WriteLine",
-                new Type[] { typeof(string) });
         }
 
         public bool isMultiple(string type)
@@ -88,25 +54,6 @@ namespace miniChartAlpha.Logica
                 Clase clase = new Clase(id, context);
                 laCsTablaSimbolos.insertar(clase);
             }
-            
-            //Se define la clase principal
-            myAsmName.Name = "TestASM";
-            myAsmBldr = currentDom.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
-            myModuleBldr = myAsmBldr.DefineDynamicModule(asmFileName);
-            myTypeBldr = myModuleBldr.DefineType(id.Text, TypeAttributes.Public);
-            
-            //Creación del constructor de la clase???
-            Type objType = Type.GetType("System.Object");
-            objCtor = objType.GetConstructor(new Type[0]);
-            Type[] ctorParams = new Type[0];
-            ConstructorBuilder pointCtor = myTypeBldr.DefineConstructor(
-                MethodAttributes.Public,
-                CallingConventions.Standard,
-                ctorParams);
-            ILGenerator ctorIL = pointCtor.GetILGenerator();
-            ctorIL.Emit(OpCodes.Ldarg_0);
-            ctorIL.Emit(OpCodes.Call, objCtor);
-            ctorIL.Emit(OpCodes.Ret);
 
             Metodo addMethod = new Metodo(null, (int)Metodo.TipoMetodo.Void, context);
             addMethod.MethodNombre = "add";
@@ -127,20 +74,7 @@ namespace miniChartAlpha.Logica
             lenMethod.cantidadParam = 1;
             lenMethod.parametros.AddLast(new Arreglo(null, (int)Metodo.TipoMetodo.Multiple, context));
             laCsTablaSimbolos.insertar(lenMethod);
-            
-            currentMethodBldr = myTypeBldr.DefineMethod("len",
-                MethodAttributes.Public | MethodAttributes.Static,
-                typeof(int),
-                new[] { typeof(Array) });
 
-            ILGenerator lenIL = currentMethodBldr.GetILGenerator();
-            lenIL.Emit(OpCodes.Ldarg_0); // Carga el arreglo
-            lenIL.Emit(OpCodes.Ldlen); //Carga el len del arreglo
-            lenIL.Emit(OpCodes.Ret); // Retorna el len
-            
-            //Se agrega el método recién creado a la lista de mpetodos globales para no perder su referencia cuando se creen más métodos
-            metodosGlobales.Add(currentMethodBldr);
-            
             //Vista a la declaración de clases
             for (int i = 0; i < context.classDecl().Length; i++)
             {
@@ -152,22 +86,17 @@ namespace miniChartAlpha.Logica
             {
                 Visit(context.varDecl(i));
             }
-
-            //Declaración de constantes?
-
+            
             //Vista a la declaración de métodos
             for (int i = 0; i < context.methodDecl().Length; i++)
             {
                 Visit(context.methodDecl(i));
             }
-            
-            pointType = myTypeBldr.CreateType(); //crea la clase para ser luego instanciada
-            myAsmBldr.Save(asmFileName);
-            
+
             laCsTablaSimbolos.CloseScope();
             laCsTablaSimbolos.consola.Show();
-            //laCsTablaSimbolos.consola.SalidaConsola.Text += pointType;
-            return pointType;
+            
+            return null;
         }
 
         // using : USING ident SEMICOLON
@@ -292,13 +221,6 @@ namespace miniChartAlpha.Logica
             IToken id = (IToken)Visit(context.ident());
             Metodo metodoBuscado = laCsTablaSimbolos.buscarObjetoTipo<Metodo>(id.Text);
 
-            // Se declara el método actual utilizando los datos obtenidos en las visitas
-            //los parámetros son null porque se tiene que visitar despues de declarar el método... se cambiará luego
-            currentMethodBldr = myTypeBldr.DefineMethod(id.Text,
-                                                MethodAttributes.Public | MethodAttributes.Static, 
-                                                        verificarTipoRetorno(id.Text),
-                                            null);
-            
             if (metodoBuscado == null)
             {
                 int idType = (int)Metodo.TipoMetodo.Void;
@@ -316,13 +238,7 @@ namespace miniChartAlpha.Logica
                     metodo.parametros = (LinkedList<object>)Visit(context.formPars());
                     metodo.cantidadParam = metodo.parametros.Count;
                 }
-                
-                //después de visitar los parámetros, se cambia el signatura que requiere la definición del método
-                Type parameterType = typeof(LinkedList<object>);
-                Type[] parameterTypes = new Type[] { parameterType };
-                currentMethodBldr.SetParameters(parameterTypes);
 
-                
                 laCsTablaSimbolos.insertar(metodo);
                 
                 // Genera el código IL correspondiente dentro del método
@@ -338,27 +254,6 @@ namespace miniChartAlpha.Logica
                                                                     "\" debe tener una expresión de retorno." +
                                                                     ShowErrorPosition(id) + "\n";
                 }
-                //Se agrega el método recién creado a la lista de mpetodos globales para no perder su referencia cuando se creen más métodos
-                metodosGlobales.Add(currentMethodBldr);
-                
-                if (context.ident().GetText().Equals("Main")) {
-                    //el puntero al metodo principal se setea cuando es el Main quien se declara
-                    pointMainBldr = currentMethodBldr;
-                    pointMainBldr.SetParameters(null);
-                    metodosGlobales.Add(pointMainBldr);
-                    ILGenerator mainIL = pointMainBldr.GetILGenerator();
-                    mainIL.Emit(OpCodes.Ldstr, "Hola Mundo");
-                    mainIL.EmitCall(OpCodes.Call, writeMS, null);
-
-                    mainIL.Emit(OpCodes.Ret);
-                    myAsmBldr.SetEntryPoint(pointMainBldr);
-                }
-                else
-                {
-                    ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-                    currentIL.Emit(OpCodes.Ret);
-                    
-                }
             }
             else
             {
@@ -368,18 +263,6 @@ namespace miniChartAlpha.Logica
             }
 
             return null;
-        }
-        //verifica el tipo escrito en el código fuente y devuelve el typeof equivalente de C#
-        private Type verificarTipoRetorno(string tipo)
-        {
-            if (tipo.Equals("int"))
-                return typeof(int);
-            else if (tipo.Equals("char"))
-                return typeof(char);
-            else
-            {
-                return typeof(void);
-            }
         }
         // formPars : type ident (COMMA type ident)*  
         public override object VisitFormParsAST(MiniCSharpParser.FormParsASTContext context)
@@ -588,20 +471,10 @@ namespace miniChartAlpha.Logica
                                                                 ShowErrorPosition(context.condition().Start) + "\n";
                 return null;
             }
-            
-            //definir etiqueta
-            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-            Label labelFalse = currentIL.DefineLabel();
-            
-            //saltar if false
-            currentIL.Emit(OpCodes.Brfalse,labelFalse);
-            
+
             //Visit statement TRUE
             Visit(context.statement(0));
-            
-            //marcar etiqueta
-            currentIL.MarkLabel(labelFalse);
-            
+
             //Visit statement FALSE
             Visit(context.statement(1));
             
@@ -612,11 +485,6 @@ namespace miniChartAlpha.Logica
         public override object VisitForStatementAST(MiniCSharpParser.ForStatementASTContext context)
         {
             var tipoExpr = Visit(context.expr());
-            
-            // Generar la etiqueta de inicio del bucle
-            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-            Label loopStartLabel = currentIL.DefineLabel();
-            currentIL.MarkLabel(loopStartLabel);
 
             // Verificar que el tipo del expr sea numérico
             if (tipoExpr == null || !(tipoExpr is int))
@@ -626,12 +494,6 @@ namespace miniChartAlpha.Logica
                 {
                     Visit(context.condition());
                 }
-                
-                // Generar la etiqueta de salida del bucle
-                Label loopExitLabel = currentIL.DefineLabel();
-                
-                // Salto condicional al finalizar el bucle si la expresión es falsa
-                currentIL.Emit(OpCodes.Brfalse, loopExitLabel);
 
                 // Si statement existe, visita su subárbol y obtiene su tipo
                 if (context.statement() != null)
@@ -643,12 +505,6 @@ namespace miniChartAlpha.Logica
                 {
                     Visit(context.statement(1));
                 }
-                
-                // Salto incondicional al inicio del bucle
-                currentIL.Emit(OpCodes.Br, loopStartLabel);
-    
-                // Marcar la etiqueta de salida del bucle
-                currentIL.MarkLabel(loopExitLabel);
             }
             else
             {
@@ -664,29 +520,13 @@ namespace miniChartAlpha.Logica
         public override object VisitWhileConditionStatementAST(
             MiniCSharpParser.WhileConditionStatementASTContext context)
         {
-            // Generar la etiqueta de inicio del bucle
-            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-            Label loopStartLabel = currentIL.DefineLabel();
-            currentIL.MarkLabel(loopStartLabel);
-            
+
             // Visitar la condición del bucle
             Visit(context.condition());
-            
-            // Generar la etiqueta de salida del bucle
-            Label loopExitLabel = currentIL.DefineLabel();
-            
-            // Salto condicional al finalizar el bucle si la expresión es falsa
-            currentIL.Emit(OpCodes.Brfalse, loopExitLabel);
-            
+
             // Visitar el statement del bucle
             Visit(context.statement());
-            
-            // Salto incondicional al inicio del bucle
-            currentIL.Emit(OpCodes.Br, loopStartLabel);
-    
-            // Marcar la etiqueta de salida del bucle
-            currentIL.MarkLabel(loopExitLabel);
-            
+
             return null;
         }
 

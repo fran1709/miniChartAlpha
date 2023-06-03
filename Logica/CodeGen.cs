@@ -24,8 +24,9 @@ namespace miniChartAlpha.Logica
 
         private MethodBuilder pointMainBldr, currentMethodBldr;
 
-        private List<MethodBuilder> metodosGlobales; 
-        
+        private List<MethodBuilder> metodosGlobales, metodosLocales;
+        private List<Object> variablesGlobales, variablesLocales;
+
         public CodeGen()
         {
             metodosGlobales = new List<MethodBuilder>();
@@ -73,12 +74,20 @@ namespace miniChartAlpha.Logica
 
         public override object VisitUsignAST(MiniCSharpParser.UsignASTContext context)
         {
-            return base.VisitUsignAST(context);
+            Visit(context.ident());
+            return null;
         }
 
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
-            return base.VisitVarDeclaAST(context);
+            //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
+            for (int i = 0; i < context.ident().Length; i++)
+            {
+                Visit(context.type());
+                Visit(context.ident(i));
+            }
+
+            return null;
         }
 
         public override object VisitClassDeclaAST(MiniCSharpParser.ClassDeclaASTContext context)
@@ -102,9 +111,9 @@ namespace miniChartAlpha.Logica
                     return typeof(bool);
                 case "double":
                     return typeof(double);
+                default:
+                    return typeof(void);
             }
-
-            return null;
         }
 
         public override object VisitMethDeclaAST(MiniCSharpParser.MethDeclaASTContext context)
@@ -148,7 +157,13 @@ namespace miniChartAlpha.Logica
 
         public override object VisitFormParsAST(MiniCSharpParser.FormParsASTContext context)
         {
-            return base.VisitFormParsAST(context);
+            for (int i = 0; i < context.type().Length; i++)
+            {
+                Visit(context.type(i));
+                Visit(context.ident(i));
+            }
+
+            return null;
         }
 
         public override object VisitTypeAST(MiniCSharpParser.TypeASTContext context)
@@ -158,7 +173,18 @@ namespace miniChartAlpha.Logica
 
         public override object VisitAssignStatementAST(MiniCSharpParser.AssignStatementASTContext context)
         {
-            return base.VisitAssignStatementAST(context);
+            Visit(context.designator());
+            if (context.expr() != null)
+            {
+                Visit(context.expr());
+            }
+
+            if (context.actPars() != null)
+            {
+                Visit(context.actPars());
+            }
+
+            return null;
         }
 
         public override object VisitIfStatementAST(MiniCSharpParser.IfStatementASTContext context)
@@ -254,169 +280,218 @@ namespace miniChartAlpha.Logica
             return null;
         }
 
-        public override object VisitBreakStatementAST(MiniCSharpParser.BreakStatementASTContext context)
-        {
-            return base.VisitBreakStatementAST(context);
-        }
-
         public override object VisitReturnStatementAST(MiniCSharpParser.ReturnStatementASTContext context)
         {
-            return base.VisitReturnStatementAST(context);
+            if (context.expr() != null)
+            {
+                Visit(context.expr());
+            }
+            return null;
         }
 
         public override object VisitWhileNumberStatementAST(MiniCSharpParser.WhileNumberStatementASTContext context)
         {
-            return base.VisitWhileNumberStatementAST(context);
+            Visit(context.designator());
+            return null;
         }
 
         public override object VisitWriteNumberStatementAST(MiniCSharpParser.WriteNumberStatementASTContext context)
         {
-            return base.VisitWriteNumberStatementAST(context);
+            Visit(context.expr());
+            return null;
         }
 
         public override object VisitBlockStatementAST(MiniCSharpParser.BlockStatementASTContext context)
         {
-            return base.VisitBlockStatementAST(context);
-        }
-
-        public override object VisitSemicolonStatementAST(MiniCSharpParser.SemicolonStatementASTContext context)
-        {
-            return base.VisitSemicolonStatementAST(context);
+            Visit(context.block());
+            return null;
         }
 
         public override object VisitBlockAST(MiniCSharpParser.BlockASTContext context)
         {
-            return base.VisitBlockAST(context);
+            for (int i = 0; i < context.varDecl().Length; i++)
+            {
+                Visit(context.varDecl(i));
+            }
+
+            for (int i = 0; i < context.statement().Length; i++)
+            {
+                Visit(context.statement(i));
+            }
+            return null;
         }
 
         public override object VisitActParsAST(MiniCSharpParser.ActParsASTContext context)
         {
-            return base.VisitActParsAST(context);
+            for (int i = 0; i < context.expr().Length; i++)
+            {
+                Visit(context.expr(i));
+            }
+
+            return null;
         }
 
         public override object VisitConditionAST(MiniCSharpParser.ConditionASTContext context)
         {
-            return base.VisitConditionAST(context);
+            for (int i = 0; i < context.condTerm().Length; i++)
+            {
+                Visit(context.condTerm(i));
+            }
+
+            return null;
         }
 
         public override object VisitCondTermAST(MiniCSharpParser.CondTermASTContext context)
         {
-            return base.VisitCondTermAST(context);
+            for (int i = 0; i < context.condFact().Length; i++)
+            {
+                Visit(context.condFact(i));
+            }
+
+            return null;
         }
 
         public override object VisitCondFactAST(MiniCSharpParser.CondFactASTContext context)
         {
-            return base.VisitCondFactAST(context);
+            Visit(context.expr(0));
+            Visit(context.expr(1));
+            return null;
         }
 
         public override object VisitCastAST(MiniCSharpParser.CastASTContext context)
         {
-            return base.VisitCastAST(context);
+            return Visit(context.type());
         }
 
         public override object VisitExprAST(MiniCSharpParser.ExprASTContext context)
         {
-            return base.VisitExprAST(context);
+            Visit(context.term(0));
+            for (int i = 1; i < context.term().Length; i++)
+            {
+                Visit(context.term(i));
+                Visit(context.addop(i - 1));
+            }
+
+            return null;
         }
 
         public override object VisitTermAST(MiniCSharpParser.TermASTContext context)
         {
-            return base.VisitTermAST(context);
+            Visit(context.factor(0));
+            for (int i = 1; i < context.factor().Length; i++)
+            {
+                Visit(context.factor(i));
+                Visit(context.mulop(i - 1));
+            }
+
+            return null;
         }
 
         public override object VisitDesignFactorAST(MiniCSharpParser.DesignFactorASTContext context)
         {
-            return base.VisitDesignFactorAST(context);
+            Visit(context.designator());
+            if (context.actPars() != null)
+            {
+                Visit(context.actPars());
+            }
+
+            return null;
         }
 
         public override object VisitCharconstFactorAST(MiniCSharpParser.CharconstFactorASTContext context)
         {
-            return base.VisitCharconstFactorAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitStrconstFactorAST(MiniCSharpParser.StrconstFactorASTContext context)
         {
-            return base.VisitStrconstFactorAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitIntFactorAST(MiniCSharpParser.IntFactorASTContext context)
         {
-            return base.VisitIntFactorAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitDoubFactorAST(MiniCSharpParser.DoubFactorASTContext context)
         {
-            return base.VisitDoubFactorAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitBoolFactorAST(MiniCSharpParser.BoolFactorASTContext context)
         {
-            return base.VisitBoolFactorAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitNewIdentFactorAST(MiniCSharpParser.NewIdentFactorASTContext context)
         {
-            return base.VisitNewIdentFactorAST(context);
+            Visit(context.ident());
+            return null;
         }
 
         public override object VisitExprInparentFactorAST(MiniCSharpParser.ExprInparentFactorASTContext context)
         {
-            return base.VisitExprInparentFactorAST(context);
+            return Visit(context.expr());
         }
 
         public override object VisitIntIdIdentAST(MiniCSharpParser.IntIdIdentASTContext context)
         {
-            return base.VisitIntIdIdentAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitCharIdIdentAST(MiniCSharpParser.CharIdIdentASTContext context)
         {
-            return base.VisitCharIdIdentAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitDoubIdIdentAST(MiniCSharpParser.DoubIdIdentASTContext context)
         {
-            return base.VisitDoubIdIdentAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitBoolIdIdentAST(MiniCSharpParser.BoolIdIdentASTContext context)
         {
-            return base.VisitBoolIdIdentAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitStrIdIdentAST(MiniCSharpParser.StrIdIdentASTContext context)
         {
-            return base.VisitStrIdIdentAST(context);
+            return verificarTipoRetorno(context.GetText());
         }
 
         public override object VisitIdentifierIdentAST(MiniCSharpParser.IdentifierIdentASTContext context)
         {
-            return base.VisitIdentifierIdentAST(context);
+            return context.IDENTIFIER().Symbol;
         }
 
         public override object VisitListIdentAST(MiniCSharpParser.ListIdentASTContext context)
         {
-            return base.VisitListIdentAST(context);
+            return  context.LIST().Symbol;
         }
 
         public override object VisitDesignatorAST(MiniCSharpParser.DesignatorASTContext context)
         {
-            return base.VisitDesignatorAST(context);
+            for (int i = 0; i < context.ident().Length; i++)
+            {
+                Visit(context.ident(i));
+            }
+
+            return null;
         }
 
         public override object VisitRelop(MiniCSharpParser.RelopContext context)
         {
-            return base.VisitRelop(context);
+            return context.GetChild(0);
         }
 
         public override object VisitAddop(MiniCSharpParser.AddopContext context)
         {
-            return base.VisitAddop(context);
+            return context.GetChild(0);
         }
 
         public override object VisitMulop(MiniCSharpParser.MulopContext context)
         {
-            return base.VisitMulop(context);
+            return context.GetChild(0);
         }
     }
 }
