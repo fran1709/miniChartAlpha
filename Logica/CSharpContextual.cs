@@ -45,20 +45,6 @@ namespace miniChartAlpha.Logica
             myAsmName.Name = "TestASM";
             myAsmBldr = currentDom.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
             myModuleBldr = myAsmBldr.DefineDynamicModule(asmFileName);
-            myTypeBldr = myModuleBldr.DefineType("TestClass");
-
-            Type objType = Type.GetType("System.Object");
-            objCtor = objType.GetConstructor(new Type[0]);
-
-            Type[] ctorParams = new Type[0];
-            ConstructorBuilder pointCtor = myTypeBldr.DefineConstructor(
-                MethodAttributes.Public,
-                CallingConventions.Standard,
-                ctorParams);
-            ILGenerator ctorIL = pointCtor.GetILGenerator();
-            ctorIL.Emit(OpCodes.Ldarg_0);
-            ctorIL.Emit(OpCodes.Call, objCtor);
-            ctorIL.Emit(OpCodes.Ret);
 
             //inicializar writeline para string
 
@@ -104,6 +90,22 @@ namespace miniChartAlpha.Logica
                 Clase clase = new Clase(id, context);
                 laCsTablaSimbolos.insertar(clase);
             }
+            
+            //Se define la clase principal
+            myTypeBldr = myModuleBldr.DefineType(id.Text, TypeAttributes.Public);
+            
+            //Creación del constructor de la clase???
+            Type objType = Type.GetType("System.Object");
+            objCtor = objType.GetConstructor(new Type[0]);
+            Type[] ctorParams = new Type[0];
+            ConstructorBuilder pointCtor = myTypeBldr.DefineConstructor(
+                MethodAttributes.Public,
+                CallingConventions.Standard,
+                ctorParams);
+            ILGenerator ctorIL = pointCtor.GetILGenerator();
+            ctorIL.Emit(OpCodes.Ldarg_0);
+            ctorIL.Emit(OpCodes.Call, objCtor);
+            ctorIL.Emit(OpCodes.Ret);
 
             Metodo addMethod = new Metodo(null, (int)Metodo.TipoMetodo.Void, context);
             addMethod.MethodNombre = "add";
@@ -124,7 +126,20 @@ namespace miniChartAlpha.Logica
             lenMethod.cantidadParam = 1;
             lenMethod.parametros.AddLast(new Arreglo(null, (int)Metodo.TipoMetodo.Multiple, context));
             laCsTablaSimbolos.insertar(lenMethod);
+            
+            currentMethodBldr = myTypeBldr.DefineMethod("len",
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(int),
+                new[] { typeof(Array) });
 
+            ILGenerator lenIL = currentMethodBldr.GetILGenerator();
+            lenIL.Emit(OpCodes.Ldarg_0); // Carga el arreglo
+            lenIL.Emit(OpCodes.Ldlen); //Carga el len del arreglo
+            lenIL.Emit(OpCodes.Ret); // Retorna el len
+            
+            //Se agrega el método recién creado a la lista de mpetodos globales para no perder su referencia cuando se creen más métodos
+            metodosGlobales.Add(currentMethodBldr);
+            
             //Vista a la declaración de clases
             for (int i = 0; i < context.classDecl().Length; i++)
             {
@@ -145,6 +160,10 @@ namespace miniChartAlpha.Logica
                 Visit(context.methodDecl(i));
             }
 
+            pointType = myTypeBldr.CreateType(); //crea la clase para ser luego instanciada
+            myAsmBldr.SetEntryPoint(pointMainBldr);
+            myAsmBldr.Save(asmFileName);
+            
             laCsTablaSimbolos.CloseScope();
             laCsTablaSimbolos.consola.Show();
             return null;
