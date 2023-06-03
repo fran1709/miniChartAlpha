@@ -588,13 +588,23 @@ namespace miniChartAlpha.Logica
                                                                 ShowErrorPosition(context.condition().Start) + "\n";
                 return null;
             }
-
+            
+            //definir etiqueta
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            Label labelFalse = currentIL.DefineLabel();
+            
+            //saltar if false
+            currentIL.Emit(OpCodes.Brfalse,labelFalse);
+            
+            //Visit statement TRUE
             Visit(context.statement(0));
-            if (context.statement().Length > 1)
-            {
-                Visit(context.statement(1));
-            }
-
+            
+            //marcar etiqueta
+            currentIL.MarkLabel(labelFalse);
+            
+            //Visit statement FALSE
+            Visit(context.statement(1));
+            
             return tipoCondicion;
         }
 
@@ -602,6 +612,11 @@ namespace miniChartAlpha.Logica
         public override object VisitForStatementAST(MiniCSharpParser.ForStatementASTContext context)
         {
             var tipoExpr = Visit(context.expr());
+            
+            // Generar la etiqueta de inicio del bucle
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            Label loopStartLabel = currentIL.DefineLabel();
+            currentIL.MarkLabel(loopStartLabel);
 
             // Verificar que el tipo del expr sea numérico
             if (tipoExpr == null || !(tipoExpr is int))
@@ -611,6 +626,12 @@ namespace miniChartAlpha.Logica
                 {
                     Visit(context.condition());
                 }
+                
+                // Generar la etiqueta de salida del bucle
+                Label loopExitLabel = currentIL.DefineLabel();
+                
+                // Salto condicional al finalizar el bucle si la expresión es falsa
+                currentIL.Emit(OpCodes.Brfalse, loopExitLabel);
 
                 // Si statement existe, visita su subárbol y obtiene su tipo
                 if (context.statement() != null)
@@ -622,7 +643,12 @@ namespace miniChartAlpha.Logica
                 {
                     Visit(context.statement(1));
                 }
-
+                
+                // Salto incondicional al inicio del bucle
+                currentIL.Emit(OpCodes.Br, loopStartLabel);
+    
+                // Marcar la etiqueta de salida del bucle
+                currentIL.MarkLabel(loopExitLabel);
             }
             else
             {
@@ -638,8 +664,29 @@ namespace miniChartAlpha.Logica
         public override object VisitWhileConditionStatementAST(
             MiniCSharpParser.WhileConditionStatementASTContext context)
         {
+            // Generar la etiqueta de inicio del bucle
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            Label loopStartLabel = currentIL.DefineLabel();
+            currentIL.MarkLabel(loopStartLabel);
+            
+            // Visitar la condición del bucle
             Visit(context.condition());
+            
+            // Generar la etiqueta de salida del bucle
+            Label loopExitLabel = currentIL.DefineLabel();
+            
+            // Salto condicional al finalizar el bucle si la expresión es falsa
+            currentIL.Emit(OpCodes.Brfalse, loopExitLabel);
+            
+            // Visitar el statement del bucle
             Visit(context.statement());
+            
+            // Salto incondicional al inicio del bucle
+            currentIL.Emit(OpCodes.Br, loopStartLabel);
+    
+            // Marcar la etiqueta de salida del bucle
+            currentIL.MarkLabel(loopExitLabel);
+            
             return null;
         }
 
