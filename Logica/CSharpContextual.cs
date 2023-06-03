@@ -15,8 +15,8 @@ namespace miniChartAlpha.Logica
         public CSTablaSimbolos laCsTablaSimbolos;
 
         // Tercera etapa 
-        private Type pointType = null;
-        private string asmFileName = "test.exe";
+        private Type pointType;
+        private string asmFileName = "TestASM.exe";
         private AssemblyName myAsmName = new AssemblyName();
 
         private AppDomain currentDom = Thread.GetDomain();
@@ -42,9 +42,7 @@ namespace miniChartAlpha.Logica
             // Tercera etapa
             metodosGlobales = new List<MethodBuilder>();
 
-            myAsmName.Name = "TestASM";
-            myAsmBldr = currentDom.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
-            myModuleBldr = myAsmBldr.DefineDynamicModule(asmFileName);
+            
 
             //inicializar writeline para string
 
@@ -92,6 +90,9 @@ namespace miniChartAlpha.Logica
             }
             
             //Se define la clase principal
+            myAsmName.Name = "TestASM";
+            myAsmBldr = currentDom.DefineDynamicAssembly(myAsmName, AssemblyBuilderAccess.RunAndSave);
+            myModuleBldr = myAsmBldr.DefineDynamicModule(asmFileName);
             myTypeBldr = myModuleBldr.DefineType(id.Text, TypeAttributes.Public);
             
             //Creación del constructor de la clase???
@@ -159,14 +160,14 @@ namespace miniChartAlpha.Logica
             {
                 Visit(context.methodDecl(i));
             }
-
+            
             pointType = myTypeBldr.CreateType(); //crea la clase para ser luego instanciada
-            myAsmBldr.SetEntryPoint(pointMainBldr);
             myAsmBldr.Save(asmFileName);
             
             laCsTablaSimbolos.CloseScope();
             laCsTablaSimbolos.consola.Show();
-            return null;
+            //laCsTablaSimbolos.consola.SalidaConsola.Text += pointType;
+            return pointType;
         }
 
         // using : USING ident SEMICOLON
@@ -177,6 +178,7 @@ namespace miniChartAlpha.Logica
         }
 
         // varDecl : type ident (COMMA ident)* SEMICOLON   
+        // TODO Generar el bytecode.
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
             LinkedList<Object> variables = new LinkedList<object>();
@@ -239,6 +241,7 @@ namespace miniChartAlpha.Logica
         }
 
         // classDecl : CLASS ident LEFTBRACK (varDecl)* RIGHTBRACK  
+        // TODO Generar el bytecode.
         public override object VisitClassDeclaAST(MiniCSharpParser.ClassDeclaASTContext context)
         {
             IToken id = context.ident().Start;
@@ -282,11 +285,20 @@ namespace miniChartAlpha.Logica
         }
 
         // methodDecl : (type | VOID) ident LEFTPAREN formPars? RIGHTPAREN block
+        // TODO Bytecode generado (verificar luego).
         public override object VisitMethDeclaAST(MiniCSharpParser.MethDeclaASTContext context)
         {
             hasReturn = false;
             IToken id = (IToken)Visit(context.ident());
             Metodo metodoBuscado = laCsTablaSimbolos.buscarObjetoTipo<Metodo>(id.Text);
+
+            // Se declara el método actual utilizando los datos obtenidos en las visitas
+            //los parámetros son null porque se tiene que visitar despues de declarar el método... se cambiará luego
+            currentMethodBldr = myTypeBldr.DefineMethod(id.Text,
+                                                MethodAttributes.Public | MethodAttributes.Static, 
+                                                        verificarTipoRetorno(id.Text),
+                                            null);
+            
             if (metodoBuscado == null)
             {
                 int idType = (int)Metodo.TipoMetodo.Void;
@@ -295,24 +307,57 @@ namespace miniChartAlpha.Logica
                     idType = (int)Visit(context.type());
                 }
 
+                // Se agregó el contexto para tener un pointer a la hora de asignarle.
                 Metodo metodo = new Metodo(id, idType, context);
-
-
+                
                 //Visita a los parametros del método
                 if (context.formPars() != null)
                 {
                     metodo.parametros = (LinkedList<object>)Visit(context.formPars());
                     metodo.cantidadParam = metodo.parametros.Count;
                 }
+                
+                //después de visitar los parámetros, se cambia el signatura que requiere la definición del método
+                Type parameterType = typeof(LinkedList<object>);
+                Type[] parameterTypes = new Type[] { parameterType };
+                currentMethodBldr.SetParameters(parameterTypes);
 
+                
                 laCsTablaSimbolos.insertar(metodo);
+                
+                // Genera el código IL correspondiente dentro del método
+                
+                
                 //Visita al bloque del método
+                //se visita el cuerpo del método para generar el código que llevará el "currentMethodBldr" de turno
                 Visit(context.block());
+                
                 if (context.type() != null && !hasReturn)
                 {
                     laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de retorno: El método \"" + id.Text +
                                                                     "\" debe tener una expresión de retorno." +
                                                                     ShowErrorPosition(id) + "\n";
+                }
+                //Se agrega el método recién creado a la lista de mpetodos globales para no perder su referencia cuando se creen más métodos
+                metodosGlobales.Add(currentMethodBldr);
+                
+                if (context.ident().GetText().Equals("Main")) {
+                    //el puntero al metodo principal se setea cuando es el Main quien se declara
+                    pointMainBldr = currentMethodBldr;
+                    pointMainBldr.SetParameters(null);
+                    metodosGlobales.Add(pointMainBldr);
+                    ILGenerator mainIL = pointMainBldr.GetILGenerator();
+                    mainIL.Emit(OpCodes.Ldstr, "Hola Mundo");
+                    mainIL.EmitCall(OpCodes.Call, writeMS, null);
+
+                    mainIL.Emit(OpCodes.Ret);
+                    myAsmBldr.SetEntryPoint(pointMainBldr);
+                }
+                else
+                {
+                    ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+                    currentIL.Emit(OpCodes.Ret);
+                    
                 }
             }
             else
@@ -324,7 +369,18 @@ namespace miniChartAlpha.Logica
 
             return null;
         }
-
+        //verifica el tipo escrito en el código fuente y devuelve el typeof equivalente de C#
+        private Type verificarTipoRetorno(string tipo)
+        {
+            if (tipo.Equals("int"))
+                return typeof(int);
+            else if (tipo.Equals("char"))
+                return typeof(char);
+            else
+            {
+                return typeof(void);
+            }
+        }
         // formPars : type ident (COMMA type ident)*  
         public override object VisitFormParsAST(MiniCSharpParser.FormParsASTContext context)
         {

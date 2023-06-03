@@ -1,0 +1,8 @@
+class Prueba
+{
+	void main ()
+    {
+        Console.WriteLine("Hola Mundo");
+    }
+
+}

@@ -180,6 +180,7 @@
       <Content Include="PruebaContextual.txt" />
       <Content Include="PruebaContextualOriginal.txt" />
       <Content Include="test.txt" />
+      <Content Include="TestASM.txt" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

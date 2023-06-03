@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using Antlr4.Runtime;
@@ -21,6 +22,9 @@ namespace miniChartAlpha
     /// </summary>
     public partial class MainWindow
     {
+        private Type pointType;
+        private object ptInstance;
+        private CSharpContextual visitor;
         public MainWindow() 
         {
             // El System.Diagnostics.Debug.WriteLine es para imprimir en la consola del debugger.
@@ -148,8 +152,27 @@ namespace miniChartAlpha
             }
             else
             {
-                var mv = new CSharpContextual();
-                mv.Visit(treeContext);
+                visitor = new CSharpContextual();
+                // Tercera etapa
+                pointType = (Type)visitor.Visit(treeContext).GetType();
+                
+                ptInstance = Activator.CreateInstance(pointType);
+                
+                /* MethodInfo mainMethod = pointType.GetMethod("Main", BindingFlags.Public | BindingFlags.Instance);
+                 if (mainMethod != null)
+                 {
+                     mainMethod.Invoke(ptInstance, null);
+                     consola.SalidaConsola.Text += "Lectura correcta!";
+                 }
+                 else
+                 {
+                     consola.SalidaConsola.Text += "Error: No se encontró el método Main en la clase prueba.";
+                 } */
+                 pointType.InvokeMember("main",
+                     BindingFlags.InvokeMethod,
+                     null,
+                     ptInstance,
+                     new object[0]);
             }
         }
     }
