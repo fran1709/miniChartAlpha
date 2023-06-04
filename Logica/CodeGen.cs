@@ -629,18 +629,41 @@ namespace miniChartAlpha.Logica
         public override object VisitRelop(MiniCSharpParser.RelopContext context)
         {
             ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-            if (context.EQUALS()!=null)
-                currentIL.Emit(OpCodes.Add);
-            else if (context.NOTEQUALS()!=null)
+            if (context.EQUALS() != null)
+            {
                 currentIL.Emit(OpCodes.Ceq);
-            else if (context.LESSTHAN()!=null)
+            }
+            else if (context.NOTEQUALS() != null)
+            {
+                currentIL.Emit(OpCodes.Ceq);
+                currentIL.Emit(OpCodes.Ldc_I4_0);
+                currentIL.Emit(OpCodes.Ceq);
+            }
+            else if (context.LESSTHAN() != null)
+            {
                 currentIL.Emit(OpCodes.Clt);
-            else if (context.NOTEQUALS()!=null)
+                currentIL.Emit(OpCodes.Ldc_I4_0);
+                currentIL.Emit(OpCodes.Ceq);
+            }
+            else if (context.GREATERTHAN() != null)
+            {
+                currentIL.Emit(OpCodes.Cgt);
+                currentIL.Emit(OpCodes.Ldc_I4_0);
+                currentIL.Emit(OpCodes.Ceq);
+            }
+            else if (context.GREATOREQUALS() != null)
+            {
                 currentIL.Emit(OpCodes.Clt);
-            else if (context.GREATERTHAN()!=null)
-                currentIL.Emit(OpCodes.Clt);
-            else if (context.GREATOREQUALS()!=null)
-                currentIL.Emit(OpCodes.Clt);
+                currentIL.Emit(OpCodes.Ldc_I4_0);
+                currentIL.Emit(OpCodes.Ceq);
+            }
+            else if (context.LESSOREQUALS() != null)
+            {
+                currentIL.Emit(OpCodes.Cgt);
+                currentIL.Emit(OpCodes.Ldc_I4_0);
+                currentIL.Emit(OpCodes.Ceq);
+            }
+            
             return context.GetChild(0);
         }
 
@@ -650,7 +673,7 @@ namespace miniChartAlpha.Logica
             if (context.PLUS()!=null)
                 currentIL.Emit(OpCodes.Add);
             else if (context.MINUS()!=null)
-                currentIL.Emit(OpCodes.Add);
+                currentIL.Emit(OpCodes.Sub);
             return context.GetChild(0);
         }
 
@@ -658,11 +681,11 @@ namespace miniChartAlpha.Logica
         {
             ILGenerator currentIL = currentMethodBldr.GetILGenerator();
             if (context.MULT()!=null)
-                currentIL.Emit(OpCodes.Add);
+                currentIL.Emit(OpCodes.Mul);
             else if (context.DIV()!=null)
-                currentIL.Emit(OpCodes.Add);
+                currentIL.Emit(OpCodes.Div);
             else if (context.MOD()!=null)
-                currentIL.Emit(OpCodes.Add);
+                currentIL.Emit(OpCodes.Rem);
             return context.GetChild(0);
         }
     }
