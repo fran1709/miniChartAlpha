@@ -5,7 +5,9 @@ class Prueba
     }
 	void main ()
     {
-       
+       int x;
+       x := 10;
+       write(x);
     }
 
 }

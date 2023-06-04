@@ -167,15 +167,16 @@ namespace miniChartAlpha
                     null,
                     ptInstance,
                     new object[0]);
-                /*Process myProcess = new Process();
+                
+                Process myProcess = new Process();
                 myProcess.StartInfo.UseShellExecute = false;
                 myProcess.StartInfo.FileName = @"../../bin/Debug/test.exe";
                 myProcess.StartInfo.RedirectStandardOutput = true;
                 myProcess.Start();
                             
                 myProcess.StandardOutput.ReadToEnd();
-                myProcess.WaitForExit();*/
-                
+                myProcess.WaitForExit();
+
             }
         }
     }

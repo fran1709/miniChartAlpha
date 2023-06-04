@@ -80,11 +80,19 @@ namespace miniChartAlpha.Logica
 
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            
+            //TODO: debe considerarse usar el nombre de la variable para almacenar las locales
+            //TODO: creadas y utilizarlas por su índice, según orden de declaración
+            
             //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
             for (int i = 0; i < context.ident().Length; i++)
             {
-                Visit(context.type());
                 Visit(context.ident(i));
+                currentIL.DeclareLocal((Type)Visit(context.type()));
+                
+                //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
+                //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
             }
 
             return null;
@@ -157,10 +165,19 @@ namespace miniChartAlpha.Logica
 
         public override object VisitFormParsAST(MiniCSharpParser.FormParsASTContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            //se construye el arreglo de tipos necesario para enviarle a la definición de métodos
+            Type[] result = new Type[context.ident().Length];
+            
             for (int i = 0; i < context.type().Length; i++)
             {
                 Visit(context.type(i));
-                Visit(context.ident(i));
+                result[i] = (Type) Visit(context.ident(i));
+                currentIL.Emit(OpCodes.Ldarg, i);
+                currentIL.DeclareLocal(result[i]);
+                currentIL.Emit(OpCodes.Stloc, i); 
+                //TODO se debería llevar una lista de argumentos para saber cual es cual cuando se deban llamar
+                //currentIL.Emit(OpCodes.Ldloc, 0);//solo para la prueba, el 0 es el que se va a llamar
             }
 
             return null;
@@ -387,16 +404,61 @@ namespace miniChartAlpha.Logica
             return null;
         }
 
+        //METHOD CALL AST
         public override object VisitDesignFactorAST(MiniCSharpParser.DesignFactorASTContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+
+            // Visitar el designador
             Visit(context.designator());
-            if (context.actPars() != null)
+
+            // Verificar si hay una llamada a método
+            if (context.LEFTPAREN() != null)
             {
-                Visit(context.actPars());
+                // Generar código para la llamada al método
+                if (context.actPars() != null)
+                {
+                    Visit(context.actPars());
+                }
+
+                // Generar código para la llamada al método en base al nombre del método
+                string methodName = context.designator().GetText();
+
+                if (methodName.Equals("write"))
+                {
+                    // Generar código para la llamada al método "write"
+                    currentIL.EmitCall(OpCodes.Call, writeMI /* OJO... EL QUE CORRESPONDA SEGUN TIPO */, null);
+                }
+                else if (!methodName.Equals("Main"))
+                {
+                    // Buscar el método en la lista de métodos globales para referenciarlo
+                    MethodBuilder method = buscarMetodo(methodName);
+                    if (method != null)
+                    {
+                        currentIL.Emit(OpCodes.Call, method);
+                    }
+                    else
+                    {
+                        // Error: el método no ha sido encontrado
+                        // Realiza aquí la lógica de manejo de errores apropiada
+                        Console.Error.WriteLine("Metodo no encontrado.");
+                    }
+                }
             }
 
             return null;
         }
+        private MethodBuilder buscarMetodo(String name)
+        {
+            foreach (var method in metodosGlobales)
+            {
+                if (method.Name.Equals(name))
+                    return method;
+            }
+
+            return null;
+        }
+
 
         public override object VisitCharconstFactorAST(MiniCSharpParser.CharconstFactorASTContext context)
         {
@@ -410,6 +472,15 @@ namespace miniChartAlpha.Logica
 
         public override object VisitIntFactorAST(MiniCSharpParser.IntFactorASTContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            try
+            {
+                currentIL.Emit(OpCodes.Ldc_I4 , Int32.Parse(context.INT().GetText()));
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine($"Unable to parse the number expression!!!");
+            }
             return verificarTipoRetorno(context.GetText());
         }
 
@@ -426,6 +497,7 @@ namespace miniChartAlpha.Logica
         public override object VisitNewIdentFactorAST(MiniCSharpParser.NewIdentFactorASTContext context)
         {
             Visit(context.ident());
+            
             return null;
         }
 
@@ -471,6 +543,7 @@ namespace miniChartAlpha.Logica
 
         public override object VisitDesignatorAST(MiniCSharpParser.DesignatorASTContext context)
         {
+            
             for (int i = 0; i < context.ident().Length; i++)
             {
                 Visit(context.ident(i));
@@ -481,16 +554,41 @@ namespace miniChartAlpha.Logica
 
         public override object VisitRelop(MiniCSharpParser.RelopContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            if (context.EQUALS()!=null)
+                currentIL.Emit(OpCodes.Add);
+            else if (context.NOTEQUALS()!=null)
+                currentIL.Emit(OpCodes.Ceq);
+            else if (context.LESSTHAN()!=null)
+                currentIL.Emit(OpCodes.Clt);
+            else if (context.NOTEQUALS()!=null)
+                currentIL.Emit(OpCodes.Clt);
+            else if (context.GREATERTHAN()!=null)
+                currentIL.Emit(OpCodes.Clt);
+            else if (context.GREATOREQUALS()!=null)
+                currentIL.Emit(OpCodes.Clt);
             return context.GetChild(0);
         }
 
         public override object VisitAddop(MiniCSharpParser.AddopContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            if (context.PLUS()!=null)
+                currentIL.Emit(OpCodes.Add);
+            else if (context.MINUS()!=null)
+                currentIL.Emit(OpCodes.Add);
             return context.GetChild(0);
         }
 
         public override object VisitMulop(MiniCSharpParser.MulopContext context)
         {
+            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+            if (context.MULT()!=null)
+                currentIL.Emit(OpCodes.Add);
+            else if (context.DIV()!=null)
+                currentIL.Emit(OpCodes.Add);
+            else if (context.MOD()!=null)
+                currentIL.Emit(OpCodes.Add);
             return context.GetChild(0);
         }
     }
