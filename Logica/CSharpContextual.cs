@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
 using Antlr4.Runtime;
 using miniChartAlpha.Logica.TypeManager;
 
@@ -13,11 +10,14 @@ namespace miniChartAlpha.Logica
     public class CSharpContextual : MiniCSharpParserBaseVisitor<Object>
     {
         public CSTablaSimbolos laCsTablaSimbolos;
+        public Consola consola;
+        public bool errorDetected;
 
         public CSharpContextual()
         {
             laCsTablaSimbolos = new CSTablaSimbolos();
-            
+            consola = new Consola(); 
+            errorDetected = false;
         }
 
         public bool isMultiple(string type)
@@ -94,8 +94,6 @@ namespace miniChartAlpha.Logica
             }
 
             laCsTablaSimbolos.CloseScope();
-            laCsTablaSimbolos.consola.Show();
-            
             return null;
         }
 
@@ -146,11 +144,12 @@ namespace miniChartAlpha.Logica
                         }
                         else
                         {
-                            laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" +
+                            consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" +
                                                                             context.type().GetText() +
                                                                             "\" no es un tipo válido." +
                                                                             ShowErrorPosition(context.type().Start) +
                                                                             "\n";
+                            errorDetected = true;
                         }
 
                     }
@@ -158,9 +157,10 @@ namespace miniChartAlpha.Logica
                 }
                 else
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de declaracion: El identificador: \"" +
+                    consola.SalidaConsola.Text += "Error de declaracion: El identificador: \"" +
                                                                     id.Text + "\" ya ha sido declarado." +
                                                                     ShowErrorPosition(id) + "\n";
+                    errorDetected = true;
 
                 }
 
@@ -192,9 +192,10 @@ namespace miniChartAlpha.Logica
                         }
                         else
                         {
-                            laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                           consola.SalidaConsola.Text +=
                                 "Error de declaracion: El tipo de variable \"" + variable.tipo +
                                 "\" no es permitido en la clase." + ShowErrorPosition(variable.tok) + "\n";
+                           errorDetected = true;
 
                         }
                     }
@@ -205,9 +206,10 @@ namespace miniChartAlpha.Logica
             }
             else
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de declaracion: La clase: \"" + id.Text +
+                consola.SalidaConsola.Text += "Error de declaracion: La clase: \"" + id.Text +
                                                                 "\" ya ha sido declarada." + ShowErrorPosition(id) +
                                                                 "\n";
+                errorDetected = true;
             }
 
             return null;
@@ -250,16 +252,18 @@ namespace miniChartAlpha.Logica
                 
                 if (context.type() != null && !hasReturn)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de retorno: El método \"" + id.Text +
+                    consola.SalidaConsola.Text += "Error de retorno: El método \"" + id.Text +
                                                                     "\" debe tener una expresión de retorno." +
                                                                     ShowErrorPosition(id) + "\n";
+                    errorDetected = true;
                 }
             }
             else
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de declaracion: El metodo: \"" + id.Text +
+                consola.SalidaConsola.Text += "Error de declaracion: El metodo: \"" + id.Text +
                                                                 "\" ya ha sido declarado." + ShowErrorPosition(id) +
                                                                 "\n";
+                errorDetected = true;
             }
 
             return null;
@@ -294,10 +298,11 @@ namespace miniChartAlpha.Logica
                 }
                 else
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" +
+                    consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" +
                                                                     context.type(i).GetText() +
                                                                     "\" no es un tipo válido." +
                                                                     ShowErrorPosition(context.type(i).Start) + "\n";
+                    errorDetected = true;
                 }
             }
 
@@ -334,9 +339,10 @@ namespace miniChartAlpha.Logica
             }
             else
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" + context.ident().GetText() +
+                consola.SalidaConsola.Text += "Error de tipos: Tipo: \"" + context.ident().GetText() +
                                                                 "\" no es un tipo válido." +
                                                                 ShowErrorPosition(context.ident().Start) + "\n";
+                errorDetected = true;
             }
 
             return result;
@@ -352,11 +358,12 @@ namespace miniChartAlpha.Logica
             {
                 if (idType == null && laCsTablaSimbolos.buscarObjetoTipo<Tipo>(context.designator().GetText()) == null)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
+                    consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
                                                                     context.designator().GetText() +
                                                                     "\" no declarado en asignación." +
                                                                     ShowErrorPosition(context.designator().Start) +
                                                                     "\n";
+                    errorDetected = true;
                 }
 
                 var exprType = Visit(context.expr());
@@ -366,33 +373,39 @@ namespace miniChartAlpha.Logica
                 {
                     if (exprType is int && (int)exprType == 7)
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                        consola.SalidaConsola.Text +=
                             "Error de tipos: no se puede asignar un metodo \"" + Metodo.showTipo((int)exprType) +
                             "\" a una variable." + ShowErrorPosition(context.ASSIGN().Symbol) + "\n";
+                        errorDetected = true;
                     }
                     else if (idType is int)
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos: \"" +
+                        consola.SalidaConsola.Text += "Error de tipos: \"" +
                                                                         (TipoBasico.TiposBasicos)idType + "\" y \"" +
                                                                         exprType + "\" no son compatibles." +
                                                                         ShowErrorPosition(context.ASSIGN().Symbol) +
                                                                         "\n";
+                        errorDetected = true;
                     }
                     else
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos: \"" + idType + "\" y \"" +
-                                                                        exprType + "\" no son compatibles." +
-                                                                        ShowErrorPosition(context.ASSIGN().Symbol) +
-                                                                        "\n";
+                    {
+                        consola.SalidaConsola.Text += "Error de tipos: \"" + idType + "\" y \"" +
+                                                      exprType + "\" no son compatibles." +
+                                                      ShowErrorPosition(context.ASSIGN().Symbol) +
+                                                      "\n";
+                        errorDetected = true; 
+                    }
                 }
 
                 var arrayDsg = laCsTablaSimbolos.buscarObjetoTipo<Arreglo>(context.designator().GetText());
                 var arrayExpr = laCsTablaSimbolos.buscarObjetoTipo<Arreglo>(context.expr().GetText());
                 if (arrayDsg != null && arrayExpr != null)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error: Asignación directa de arreglos \"" +
+                    consola.SalidaConsola.Text += "Error: Asignación directa de arreglos \"" +
                                                                     context.designator().GetText() + "\" y \"" +
                                                                     context.expr().GetText() + "\" no permitida." +
                                                                     ShowErrorPosition(context.ASSIGN().Symbol) + "\n";
+                    errorDetected = true; 
                 }
             }
 
@@ -400,24 +413,26 @@ namespace miniChartAlpha.Logica
             {
                 if (metodo == null)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
+                    consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
                                                                     context.designator().GetText() +
                                                                     "\" no declarado en asignación." +
                                                                     ShowErrorPosition(context.designator().Start) +
                                                                     "\n";
+                    errorDetected = true; 
                 }
                 else
                 {
                     LinkedList<Object> pars = (LinkedList<Object>)Visit(context.actPars());
                     if (pars.Count != metodo.parametros.Count)
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de parámetros: El método \"" +
+                        consola.SalidaConsola.Text += "Error de parámetros: El método \"" +
                                                                         context.designator().GetText() + "\" espera " +
                                                                         metodo.parametros.Count() +
                                                                         " parámetros, pero se encontraron " +
                                                                         pars.Count + " parámetros." +
                                                                         ShowErrorPosition(context.designator().Start) +
                                                                         "\n";
+                        errorDetected = true; 
                     }
                     else
                     {
@@ -433,20 +448,22 @@ namespace miniChartAlpha.Logica
                                 if (!Metodo.checkParsType((int)TipoBasico.TiposBasicos.Int, (int)actPar) &&
                                     !Metodo.checkParsType((int)TipoBasico.TiposBasicos.Char, (int)actPar))
                                 {
-                                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                                    consola.SalidaConsola.Text +=
                                         "Error de tipos: El tipo del parámetro en la posición " + (i + 1) +
                                         " no coincide con el tipo declarado." +
                                         ShowErrorPosition(context.designator().Start) + "\n";
+                                    errorDetected = true; 
                                 }
                             }
                             else
                             {
                                 if (!Metodo.checkParsType(declPar, actPar))
                                 {
-                                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                                    consola.SalidaConsola.Text +=
                                         "Error de tipos: El tipo del parámetro en la posición " + (i + 1) +
                                         " no coincide con el tipo declarado." +
                                         ShowErrorPosition(context.designator().Start) + "\n";
+                                    errorDetected = true; 
                                 }
                             }
 
@@ -467,8 +484,9 @@ namespace miniChartAlpha.Logica
             if (tipoCondicion.Equals(TipoBasico.TiposBasicos.Error))
             {
                 // La expresión es nula, se reporta el error
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error: La condición del if es nula." +
+                consola.SalidaConsola.Text += "Error: La condición del if es nula." +
                                                                 ShowErrorPosition(context.condition().Start) + "\n";
+                errorDetected = true; 
                 return null;
             }
 
@@ -476,7 +494,10 @@ namespace miniChartAlpha.Logica
             Visit(context.statement(0));
 
             //Visit statement FALSE
-            Visit(context.statement(1));
+            if (context.statement().Length > 1)
+            {
+                Visit(context.statement(1));
+            }
             
             return tipoCondicion;
         }
@@ -508,8 +529,9 @@ namespace miniChartAlpha.Logica
             }
             else
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                consola.SalidaConsola.Text +=
                     "Error: La expresión del for debe ser de tipo numérico.\n";
+                errorDetected = true; 
                 return null;
             }
 
@@ -548,29 +570,32 @@ namespace miniChartAlpha.Logica
                         {
                             if (returnType.tipoDato != (int)exprType)
                             {
-                                laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                                consola.SalidaConsola.Text +=
                                     "Error de tipos: El tipo de retorno del método \"" + methodName +
                                     "\" no coincide con el tipo de la expresión de retorno." +
                                     ShowErrorPosition(context.RETURN().Symbol) + "\n";
+                                errorDetected = true; 
                             }
                         }
                         else
                         {
-                            laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de retorno: El método \"" +
+                            consola.SalidaConsola.Text += "Error de retorno: El método \"" +
                                                                             methodName + "\" es de tipo \"" +
                                                                             Metodo.showTipo(returnType.tipoDato) +
                                                                             "\" no debe tener una expresión de retorno." +
                                                                             ShowErrorPosition(methodDeclContext
                                                                                 .RIGHTPAREN().Symbol) + "\n";
+                            errorDetected = true; 
 
                         }
                     }
                 }
                 else
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                    consola.SalidaConsola.Text +=
                         "Error: Las instrucciones de retorno no están permitidas fuera de los métodos." +
                         ShowErrorPosition(context.RETURN().Symbol) + "\n";
+                    errorDetected = true; 
                 }
             }
             else
@@ -590,11 +615,12 @@ namespace miniChartAlpha.Logica
             var type = Visit(context.designator());
             if (type == null || (TipoBasico.TiposBasicos)type == TipoBasico.TiposBasicos.Error)
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
+                consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
                                                                 context.designator().GetText() +
                                                                 "\" no declarado en el metodo \"" +
                                                                 context.READ().Symbol.Text + "\"." +
                                                                 ShowErrorPosition(context.designator().Start) + "\n";
+                errorDetected = true; 
             }
 
             return null;
@@ -606,11 +632,12 @@ namespace miniChartAlpha.Logica
             Object exprType = Visit(context.expr());
             if (exprType == null || (TipoBasico.TiposBasicos)exprType == TipoBasico.TiposBasicos.Error)
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
+                consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
                                                                 context.expr().GetText() +
                                                                 "\" no declarado en el metodo \"" +
                                                                 context.WRITE().Symbol.Text + "\"." +
                                                                 ShowErrorPosition(context.expr().Start) + "\n";
+                errorDetected = true; 
 
             }
 
@@ -653,9 +680,10 @@ namespace miniChartAlpha.Logica
                 if (exprType == null ||
                     exprType is TipoBasico.TiposBasicos type && type == TipoBasico.TiposBasicos.Error)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, expresion invalida \"" +
+                    consola.SalidaConsola.Text += "Error de alcances, expresion invalida \"" +
                                                                     context.expr(i).GetText() + "\" en parametros." +
                                                                     ShowErrorPosition(context.expr(i).Start) + "\n";
+                    errorDetected = true; 
                 }
 
                 param.AddLast(exprType);
@@ -703,18 +731,20 @@ namespace miniChartAlpha.Logica
             var type2 = (int)Visit(context.expr(1));
             if (!isMultiple(context.relop().GetText()) && !type1.Equals(type2))
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos " + TipoBasico.showTipo(type1) + " y " +
+                consola.SalidaConsola.Text += "Error de tipos " + TipoBasico.showTipo(type1) + " y " +
                                                                 TipoBasico.showTipo(type2) +
                                                                 " no son compatibles. Solo se aceptan de tipo INT" +
                                                                 ShowErrorPosition(context.expr(0).Start) + "\n";
+                errorDetected = true; 
                 return TipoBasico.TiposBasicos.Error;
             }
 
             if (isMultiple(context.relop().GetText()) && !type1.Equals(type2))
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos " + TipoBasico.showTipo(type1) + " y " +
+                consola.SalidaConsola.Text += "Error de tipos " + TipoBasico.showTipo(type1) + " y " +
                                                                 TipoBasico.showTipo(type2) + " no son compatibles." +
                                                                 ShowErrorPosition(context.expr(0).Start) + "\n";
+                errorDetected = true; 
                 return TipoBasico.TiposBasicos.Error;
 
             }
@@ -737,16 +767,18 @@ namespace miniChartAlpha.Logica
                 var type2 = Visit(context.term(i));
                 if (!type.Equals(type2))
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos " + type + " y " + type2 +
+                    consola.SalidaConsola.Text += "Error de tipos " + type + " y " + type2 +
                                                                     " no son compatibles. Solo se aceptan de tipo int" +
                                                                     ShowErrorPosition(context.term(0).Start) + "\n";
+                    errorDetected = true; 
                     if (!isMultiple(context.addop(i - 1).GetText()))
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de operador " +
+                        consola.SalidaConsola.Text += "Error de operador " +
                                                                         context.addop(i - 1).GetText() +
                                                                         " no es permtido en este caso. " +
                                                                         ShowErrorPosition(context.addop(0).Start) +
                                                                         "\n";
+                        errorDetected = true; 
                     }
                 }
 
@@ -782,10 +814,11 @@ namespace miniChartAlpha.Logica
                         return casteo;
                     }
 
-                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                    consola.SalidaConsola.Text +=
                         "Error de casteo, no es posible castear una variable tipo " + TipoBasico.showTipo((int)type) +
                         " al tipo " + TipoBasico.showTipo((int)casteo) + ". " +
                         ShowErrorPosition(context.cast().Start) + "\n";
+                    errorDetected = true; 
                 }
             }
 
@@ -802,16 +835,19 @@ namespace miniChartAlpha.Logica
                 var type2 = Visit(context.factor(i));
                 if (!type.Equals(type2))
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de tipos " + type + " y " + type2 +
+                    consola.SalidaConsola.Text += "Error de tipos " + type + " y " + type2 +
                                                                     " no son compatibles. Solo se aceptan de tipo INT" +
                                                                     ShowErrorPosition(context.factor(0).Start) + "\n";
+                    errorDetected = true; 
+                    
                     if (!isMultiple(context.mulop(i - 1).GetText()))
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de operando " +
+                        consola.SalidaConsola.Text += "Error de operando " +
                                                                         context.mulop(i - 1).GetText() +
                                                                         " no es permtido en este caso. " +
                                                                         ShowErrorPosition(context.mulop(0).Start) +
                                                                         "\n";
+                        errorDetected = true; 
                     }
                 }
 
@@ -830,24 +866,26 @@ namespace miniChartAlpha.Logica
             {
                 if (metodo == null)
                 {
-                    laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
+                    consola.SalidaConsola.Text += "Error de alcances, identificador \"" +
                                                                     context.designator().GetText() +
                                                                     "\" no declarado en asignación." +
                                                                     ShowErrorPosition(context.designator().Start) +
                                                                     "\n";
+                    errorDetected = true; 
                 }
                 else
                 {
                     LinkedList<Object> pars = (LinkedList<Object>)Visit(context.actPars());
                     if (pars.Count != metodo.parametros.Count)
                     {
-                        laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de parámetros: El método \"" +
+                        consola.SalidaConsola.Text += "Error de parámetros: El método \"" +
                                                                         context.designator().GetText() + "\" espera " +
                                                                         metodo.parametros.Count() +
                                                                         " parámetros, pero se encontraron " +
                                                                         pars.Count + " parámetros." +
                                                                         ShowErrorPosition(context.designator().Start) +
                                                                         "\n";
+                        errorDetected = true; 
                     }
                     else
                     {
@@ -863,20 +901,22 @@ namespace miniChartAlpha.Logica
                                 if (!Metodo.checkParsType((int)TipoBasico.TiposBasicos.Int, (int)actPar) &&
                                     !Metodo.checkParsType((int)TipoBasico.TiposBasicos.Char, (int)actPar))
                                 {
-                                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                                    consola.SalidaConsola.Text +=
                                         "Error de tipos: El tipo del parámetro en la posición " + (i + 1) +
                                         " no coincide con el tipo declarado." +
                                         ShowErrorPosition(context.designator().Start) + "\n";
+                                    errorDetected = true; 
                                 }
                             }
                             else
                             {
                                 if (!Metodo.checkParsType(declPar, actPar))
                                 {
-                                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                                   consola.SalidaConsola.Text +=
                                         "Error de tipos: El tipo del parámetro en la posición " + (i + 1) +
                                         " no coincide con el tipo declarado." +
                                         ShowErrorPosition(context.designator().Start) + "\n";
+                                   errorDetected = true; 
                                 }
                             }
 
@@ -927,9 +967,10 @@ namespace miniChartAlpha.Logica
             string type = token.Text;
             if (!TipoClase.IsTipoClase(type) && !Arreglo.isTipoArreglo(type))
             {
-                laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                consola.SalidaConsola.Text +=
                     "Error de tipos, se esperaba una clase o un arreglo de tipo válido, se encontró " + token.Text +
                     "\n" + ShowErrorPosition(context.ident().Start) + "\n";
+                errorDetected = true; 
                 return null;
             }
 
@@ -998,9 +1039,10 @@ namespace miniChartAlpha.Logica
                             varType = clase.buscarAtributo<TipoBasico>(id);
                             if (varType == null)
                             {
-                                laCsTablaSimbolos.consola.SalidaConsola.Text += "Error de alcances, atributo \"" + id +
+                                consola.SalidaConsola.Text += "Error de alcances, atributo \"" + id +
                                     "\" no encontrado en la clase \"" + clase.tok.Text + "\"." +
                                     ShowErrorPosition(idToken) + "\n";
+                                errorDetected = true; 
                                 return TipoBasico.TiposBasicos.Error;
                             }
                         }
@@ -1041,9 +1083,10 @@ namespace miniChartAlpha.Logica
                         return (TipoBasico.TiposBasicos)arregloType.tipoDato;
                     }
 
-                    laCsTablaSimbolos.consola.SalidaConsola.Text +=
+                    consola.SalidaConsola.Text +=
                         "Error: el índice del arreglo debe ser de tipo int" + ShowErrorPosition(indexIdent.Symbol) +
                         "\n";
+                    errorDetected = true; 
                     return TipoBasico.TiposBasicos.Error;
                 }
 

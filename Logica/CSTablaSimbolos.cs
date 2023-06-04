@@ -10,13 +10,11 @@ namespace miniChartAlpha.Logica
     {
         static LinkedList<Object> tabla;
         public int nivelActual;
-        public Consola consola;
 
         public CSTablaSimbolos()
         {
             tabla = new LinkedList<Object>();
             nivelActual = -1;
-            consola = new Consola();
         }
 
         public void insertar(Tipo ident)

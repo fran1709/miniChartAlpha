@@ -6,8 +6,12 @@ class Prueba
 	void main ()
     {
        int x;
-       x := 10;
-       write(x);
+       x = 10;
+       write(10);
+       write("Hola Mundo");
+       write('a');
+       write(5.5);
+       write(true);
     }
 
 }

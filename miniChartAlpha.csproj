@@ -139,6 +139,7 @@
         <Compile Include="Logica\MiniCSharpScanner.cs" />
         <Compile Include="Logica\MyErrorListener.cs" />
         <Compile Include="Logica\MyErrorStrategy.cs" />
+        <Compile Include="Logica\Testeo.cs" />
         <Compile Include="Logica\TypeManager\Arreglo.cs" />
         <Compile Include="Logica\TypeManager\Clase.cs" />
         <Compile Include="Logica\TypeManager\Metodo.cs" />

@@ -123,7 +123,15 @@ namespace miniChartAlpha
         
         private void RunMiniChart(ICharStream pCode)
         {
-            //ICharStream inputStream = CharStreams.fromPath(@"C:\Users\Mariana Artavia Vene\Documents\I SEMESTRE 2023\Compiladores e Interpretes\ConsoleCompi\ConsoleCompi\test.txt");
+            try
+            {
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
             var lexer = new MiniCSharpScanner(pCode);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             MiniCSharpParser parser = new MiniCSharpParser(tokens);
@@ -156,27 +164,33 @@ namespace miniChartAlpha
                 //Ejecución de analisis contextual
                 var mv = new CSharpContextual();
                 mv.Visit(treeContext);
-                
-                visitor = new CodeGen();
 
-                // Tercera etapa
-                pointType = (Type)visitor.Visit(treeContext);
-                ptInstance = Activator.CreateInstance(pointType);
-                pointType.InvokeMember("main",
-                    BindingFlags.InvokeMethod,
-                    null,
-                    ptInstance,
-                    new object[0]);
+                //Si se detectaron errores el en analisis contextual se muestran en consola
+                if (mv.errorDetected)
+                {
+                    mv.consola.Show();
+                }
+                else //Sino se procede con la generación de código
+                {
+                    visitor = new CodeGen();
+                    pointType = (Type)visitor.Visit(treeContext);
+                    ptInstance = Activator.CreateInstance(pointType);
+                    pointType.InvokeMember("main",
+                        BindingFlags.InvokeMethod,
+                        null,
+                        ptInstance,
+                        new object[0]);
                 
-                Process myProcess = new Process();
-                myProcess.StartInfo.UseShellExecute = false;
-                myProcess.StartInfo.FileName = @"../../bin/Debug/test.exe";
-                myProcess.StartInfo.RedirectStandardOutput = true;
-                myProcess.Start();
-                            
-                myProcess.StandardOutput.ReadToEnd();
-                myProcess.WaitForExit();
-
+                    Process myProcess = new Process();
+                    myProcess.StartInfo.UseShellExecute = false;
+                    myProcess.StartInfo.FileName = @"../../bin/Debug/test.exe";
+                    myProcess.StartInfo.RedirectStandardOutput = true;
+                    myProcess.Start();
+                
+                    myProcess.WaitForExit();
+                    consola.SalidaConsola.Text = "Codigo generado\n"+myProcess.StandardOutput.ReadToEnd();;
+                    consola.Show();
+                }
             }
         }
     }
