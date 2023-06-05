@@ -5,7 +5,7 @@ class Prueba
     }
 	void main ()
     {
-       int x;
+       int x,y,z,f,m;
        x = 10;
        write(10);
        write("Hola Mundo");

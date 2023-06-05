@@ -101,20 +101,49 @@ namespace miniChartAlpha.Logica
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
             ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-            
+
             //TODO: debe considerarse usar el nombre de la variable para almacenar las locales
             //TODO: creadas y utilizarlas por su índice, según orden de declaración
             
-            currentIL.DeclareLocal((Type)Visit(context.type()));
-
-            //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
-            for (int i = 0; i < context.ident().Length; i++)
+            //TODO: PRIMERO SE AVERIGUA SI ES GLOBAL O NO MEDIANTE EL ARBOL
+            if (context.isGlobal)
             {
-                Visit(context.ident(i));
-                //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
-                //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
+                //se recorren las var globales y se declaran y guardan en el diccionario respectivamente para
+                //luego accederlas cuando se asignan.
+                
+                //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
+                for (int i = 0; i < context.ident().Length; i++)
+                {
+                    Type varType = (Type)Visit(context.ident(i)); // se busca el tipo, ident en teoria devuelve un Type.
+                    FieldBuilder gobal_var= myTypeBldr.DefineField(context.ident(i).GetText(), varType, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Private);// se declara
+                    
+                    // se añade al diccionario aca
+                    // TODO: Verificar que context.idden(i).GetText() posea el nombre.
+                    global_vars.Add(context.ident(i).GetText(), gobal_var);
+                    
+                    //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
+                    //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
+                }
+            }
+            else
+            {
+                //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
+                for (int i = 0; i < context.ident().Length; i++)
+                {
+                    Type varType = (Type)Visit(context.type()); // se busca el tipo, ident en teoria devuelve un Type.
+                    LocalBuilder local_var= currentIL.DeclareLocal(varType); // se declara
+                    
+                    // se añade al diccionario aca
+                    // TODO: Verificar que context.idden(i).GetText() posea el nombre.
+                    local_vars.Add(context.ident(i).GetText(), local_var);
+                    
+                    //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
+                    //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
+                }
             }
 
+            //currentIL.DeclareLocal((Type)Visit(context.type()));
+    
             return null;
         }
 
