@@ -12,6 +12,7 @@ namespace miniChartAlpha.Logica
         public CSTablaSimbolos laCsTablaSimbolos;
         public Consola consola;
         public bool errorDetected;
+        private int indexCounter = 0;
 
         public CSharpContextual()
         {
@@ -153,6 +154,14 @@ namespace miniChartAlpha.Logica
                         }
 
                     }
+
+                    // GUARDA EL NIVEL E ÍNDICE DE LA VAR DECLARADA EN EL ÁRBOL PARA LUEGO ACCEDERLA EN CODEGEN.
+                    indexCounter++;
+                    if (laCsTablaSimbolos.nivelActual==0)
+                    {
+                        context.isGlobal = true;
+                    }
+                    context.indexVar = indexCounter;
 
                 }
                 else

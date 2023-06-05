@@ -9,7 +9,7 @@ program : (using)* CLASS ident LEFTBRACK (varDecl | classDecl | methodDecl)* RIG
 using : USING ident SEMICOLON                                                                                  #usignAST;                                                                                 
 
 //se agrega a cada declaración de variable un entero que pueda servir para generación de código
-varDecl locals [int indexVar=0] : type ident (COMMA ident)* SEMICOLON                                                                  #varDeclaAST;
+varDecl locals [int indexVar=0, bool isGlobal=false] : type ident (COMMA ident)* SEMICOLON                                                                  #varDeclaAST;
 
 classDecl : CLASS ident LEFTBRACK (varDecl)* RIGHTBRACK                                                        #classDeclaAST;
 

@@ -18,15 +18,21 @@ namespace miniChartAlpha.Logica
 
         private ModuleBuilder myModuleBldr;
 
-        private TypeBuilder myTypeBldr;
+        private TypeBuilder myTypeBldr, subClassBuilder;
         private ConstructorInfo objCtor=null;
 
         private MethodInfo writeMI, writeMS, writeMC, writeMD, writeMB;
 
         private MethodBuilder pointMainBldr, currentMethodBldr;
 
-        private List<MethodBuilder> metodosGlobales, metodosLocales;
-        private List<Object> variablesGlobales, variablesLocales;
+        private List<MethodBuilder> metodosGlobales;
+        
+        private bool isArgument = false;
+        
+        // Diccionarios para almacenar variables locales,globales y clases.
+        private Dictionary<string, FieldBuilder> global_vars = new Dictionary<string, FieldBuilder>();
+        private Dictionary<string, LocalBuilder> local_vars = new Dictionary<string, LocalBuilder>();
+        private Dictionary<string, TypeBuilder> classes = new Dictionary<string, TypeBuilder>();
 
         public CodeGen()
         {
@@ -91,6 +97,7 @@ namespace miniChartAlpha.Logica
             return null;
         }
 
+        // TODO: Generar bytecode necesario para guardar variables ya sea locales o globales.
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
             ILGenerator currentIL = currentMethodBldr.GetILGenerator();
@@ -111,6 +118,7 @@ namespace miniChartAlpha.Logica
             return null;
         }
 
+        // TODO: En bytecode guardar en el diccionario las clases nuevas (subclases?) que se creen dentro del contexto.
         public override object VisitClassDeclaAST(MiniCSharpParser.ClassDeclaASTContext context)
         {
             foreach (var child in context.children)
