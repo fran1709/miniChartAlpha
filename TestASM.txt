@@ -6,15 +6,18 @@ class Prueba
     }
 	void main ()
     {
-       int x,y;
+       int x,y,z;
+       string h;
        x = 10;
        y = 25;
+       h ="hola mundo!";
        write(y);
        write(10);
        write("Hola Mundo");
        write('a');
        write(5.5);
        write(true);
+       write(h);
     }
 
 }

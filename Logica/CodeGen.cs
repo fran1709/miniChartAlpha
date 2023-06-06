@@ -260,20 +260,18 @@ namespace miniChartAlpha.Logica
             if (context.expr() != null)
             {
                 Type exprType = (Type)Visit(context.expr());
-                var exprValue = int.Parse(context.expr().Start.Text); //valor numerico a asignar en la variable
+                //var exprValue = int.Parse(context.expr().GetText()); //valor numerico a asignar en la variable
 
                 ILGenerator currentIL = currentMethodBldr.GetILGenerator();
                 
                 if (local_vars.ContainsKey(variableName)) // Verificar si la variable es local
                 {
                     LocalBuilder local_var = local_vars[variableName]; // Obtener la variable local del diccionario
-                    //currentIL.Emit(OpCodes.Ldc_I4, exprValue);  // se coloca en la pila // TODO: Da error aca idk why! DX 
-                    currentIL.Emit(OpCodes.Stloc, local_var.LocalIndex); // Almacenar el valor en la variable local
+                    currentIL.Emit(OpCodes.Stloc, local_var); // Almacenar el valor en la variable local
                 }
                 else if (global_vars.ContainsKey(variableName)) // Verificar si la variable es global
                 {
                     FieldBuilder global_var = global_vars[variableName]; // Obtener la variable global del diccionario
-                    //currentIL.Emit(OpCodes.Ldc_I4, exprValue);        // se coloca en la pila
                     currentIL.Emit(OpCodes.Stsfld, global_var); // Almacenar el valor en la variable global
                 }
                 else
@@ -523,7 +521,7 @@ namespace miniChartAlpha.Logica
             Visit(context.designator());
 
             // Verificar si hay una llamada a método
-            if (context.LEFTPAREN() != null)
+            if (context.LEFTPAREN() != null)  // metodos
             {
                 // Generar código para la llamada al método
                 if (context.actPars() != null)
@@ -548,6 +546,33 @@ namespace miniChartAlpha.Logica
                         // Realiza aquí la lógica de manejo de errores apropiada
                         Console.Error.WriteLine("Metodo no encontrado.");
                     }
+                }
+            }
+            else // variables
+            {
+                string varName = context.designator().GetText();
+                Type varType = local_vars[varName].LocalType;
+
+                if (varType == typeof(int))
+                {
+                    currentIL.Emit(OpCodes.Ldloc, local_vars[varName]);
+                    return verificarTipoRetorno("int");
+                } else if(varType == typeof(string))
+                {
+                    currentIL.Emit(OpCodes.Ldloc, local_vars[varName]);
+                    return verificarTipoRetorno("string");
+                } else if (varType == typeof(bool))
+                {
+                    currentIL.Emit(OpCodes.Ldloc, local_vars[varName]);
+                    return verificarTipoRetorno("bool");
+                }else if (varType == typeof(double))
+                {
+                    currentIL.Emit(OpCodes.Ldloc, local_vars[varName]);
+                    return verificarTipoRetorno("double");
+                }else if (varType == typeof(char))
+                {
+                    currentIL.Emit(OpCodes.Ldloc, local_vars[varName]);
+                    return verificarTipoRetorno("char");
                 }
             }
 
