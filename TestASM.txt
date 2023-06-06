@@ -1,6 +1,6 @@
 class Prueba
 {
-    //int a;
+    int a;
     void hola ()
     {
     }
@@ -8,9 +8,11 @@ class Prueba
     {
        int x,y,z;
        string h;
+       
        x = 10;
        y = 25;
        h ="hola mundo!";
+       
        write(y);
        write(10);
        write("Hola Mundo");
@@ -18,6 +20,8 @@ class Prueba
        write(5.5);
        write(true);
        write(h);
+       
+       z = 17;
+       write(z);
     }
-
 }

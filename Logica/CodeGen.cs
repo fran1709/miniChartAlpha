@@ -84,7 +84,7 @@ namespace miniChartAlpha.Logica
             {
                 Visit(child);
             }
-            pointType = myTypeBldr.CreateType(); //creo un tipo de la clase para luego ser instanciada
+            pointType = (Type)myTypeBldr.CreateType(); //creo un tipo de la clase para luego ser instanciada
             myAsmBldr.SetEntryPoint(pointMainBldr); // setEntryPoint cargar el metodo de entrada a la clase
             myAsmBldr.Save(asmFileName); //
             
@@ -100,8 +100,6 @@ namespace miniChartAlpha.Logica
         // TODO: Generar bytecode necesario para guardar variables ya sea locales o globales.
         public override object VisitVarDeclaAST(MiniCSharpParser.VarDeclaASTContext context)
         {
-            ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-
             //TODO: debe considerarse usar el nombre de la variable para almacenar las locales
             //TODO: creadas y utilizarlas por su índice, según orden de declaración
             
@@ -120,9 +118,10 @@ namespace miniChartAlpha.Logica
                      * Atributo 2 = Tipo
                      * Atributo 3 = Atributos de variable (publica, privada, estatica).
                      */
+                    Type varType = (Type)Visit(context.type()); // se busca el tipo, ident en teoria devuelve un Type.
                     FieldBuilder global_var= myTypeBldr.DefineField(context.ident(i).GetText(), //name
-                                                                   (Type)Visit(context.ident(i)), // se busca el tipo, ident en teoria devuelve un Type., 
-                                                            FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Private); //atributos
+                                                                    varType, // se busca el tipo, ident en teoria devuelve un Type., 
+                                                            FieldAttributes.Public | FieldAttributes.Static); //atributos
                     // se añade al diccionario aca
                     // TODO: Verificar que context.idden(i).GetText() posea el nombre.
                     // DONE: Se verifico y retorna un tipo correcto: int32,etc..
@@ -132,8 +131,9 @@ namespace miniChartAlpha.Logica
                     //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
                 }
             }
-            else
+            else //local
             {
+                ILGenerator currentIL = currentMethodBldr.GetILGenerator();
                 //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
                 for (int i = 0; i < context.ident().Length; i++)
                 {
@@ -532,7 +532,7 @@ namespace miniChartAlpha.Logica
                 // Generar código para la llamada al método en base al nombre del método
                 string methodName = context.designator().GetText();
 
-                if (!methodName.Equals("Main"))
+                if (!methodName.Equals("main"))
                 {
                     // Buscar el método en la lista de métodos globales para referenciarlo
                     MethodBuilder method = buscarMetodo(methodName);
