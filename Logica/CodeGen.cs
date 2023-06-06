@@ -114,12 +114,19 @@ namespace miniChartAlpha.Logica
                 //Se recorren todas las variables (cuando se declaran de un mismo tipo separadas por coma)
                 for (int i = 0; i < context.ident().Length; i++)
                 {
-                    Type varType = (Type)Visit(context.ident(i)); // se busca el tipo, ident en teoria devuelve un Type.
-                    FieldBuilder gobal_var= myTypeBldr.DefineField(context.ident(i).GetText(), varType, FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Private);// se declara
-                    
+                    // se declara la variable global
+                    /**
+                     * Atributo 1 = Nombre
+                     * Atributo 2 = Tipo
+                     * Atributo 3 = Atributos de variable (publica, privada, estatica).
+                     */
+                    FieldBuilder global_var= myTypeBldr.DefineField(context.ident(i).GetText(), //name
+                                                                   (Type)Visit(context.ident(i)), // se busca el tipo, ident en teoria devuelve un Type., 
+                                                            FieldAttributes.Public | FieldAttributes.Static | FieldAttributes.Private); //atributos
                     // se añade al diccionario aca
                     // TODO: Verificar que context.idden(i).GetText() posea el nombre.
-                    global_vars.Add(context.ident(i).GetText(), gobal_var);
+                    // DONE: Se verifico y retorna un tipo correcto: int32,etc..
+                    global_vars.Add(context.ident(i).GetText(), global_var);
                     
                     //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
                     //del nombre de la variable que debería ser necesario para discriminar luego cual se va a usar en cada caso
@@ -135,6 +142,7 @@ namespace miniChartAlpha.Logica
                     
                     // se añade al diccionario aca
                     // TODO: Verificar que context.idden(i).GetText() posea el nombre.
+                    // DONE: Se verifico y retorna un tipo correcto: int32,etc..
                     local_vars.Add(context.ident(i).GetText(), local_var);
                     
                     //nótese que cuando se visita al idDeclaration se devuelve el Type y ese Type no trae información
@@ -206,6 +214,8 @@ namespace miniChartAlpha.Logica
 
             //Se agrega el método recién creado a la lista de mpetodos globales para no perder su referencia cuando se creen más métodos
             metodosGlobales.Add(currentMethodBldr);
+            
+            // si el metodo es el main lo coloca como puntero de arranque para el programa.
             if (context.ident().GetText().Equals("main"))
             {
                 //el puntero al metodo principal se setea cuando es el Main quien se declara
@@ -240,15 +250,37 @@ namespace miniChartAlpha.Logica
             return verificarTipoRetorno(context.ident().GetText());
         }
 
+        // TODO: GENERAR BYTECODE PARA ASIGNACIONES
+        //TODO: EN BASE AL DICCIONARIO GUARDADO CON LA INFO DE LAS DECLARACIONES ASIGNAR RESPECTIVAMENTE EL VALOR A SU VARIABLE CORRECTA
         public override object VisitAssignStatementAST(MiniCSharpParser.AssignStatementASTContext context)
         {
-            Visit(context.designator());
+            Visit(context.designator()); 
+            string variableName = context.designator().GetText(); // Obtener el nombre de la variable
+            
             if (context.expr() != null)
             {
-                Visit(context.expr());
-                ILGenerator currentIL = currentMethodBldr.GetILGenerator();
-                currentIL.Emit(OpCodes.Stloc,0); //TODO: e debe utilizar el índice que corresponde a la variable y no 0 siempre
+                Type exprType = (Type)Visit(context.expr());
+                var exprValue = int.Parse(context.expr().Start.Text); //valor numerico a asignar en la variable
 
+                ILGenerator currentIL = currentMethodBldr.GetILGenerator();
+                
+                if (local_vars.ContainsKey(variableName)) // Verificar si la variable es local
+                {
+                    LocalBuilder local_var = local_vars[variableName]; // Obtener la variable local del diccionario
+                    //currentIL.Emit(OpCodes.Ldc_I4, exprValue);  // se coloca en la pila // TODO: Da error aca idk why! DX 
+                    currentIL.Emit(OpCodes.Stloc, local_var.LocalIndex); // Almacenar el valor en la variable local
+                }
+                else if (global_vars.ContainsKey(variableName)) // Verificar si la variable es global
+                {
+                    FieldBuilder global_var = global_vars[variableName]; // Obtener la variable global del diccionario
+                    //currentIL.Emit(OpCodes.Ldc_I4, exprValue);        // se coloca en la pila
+                    currentIL.Emit(OpCodes.Stsfld, global_var); // Almacenar el valor en la variable global
+                }
+                else
+                {
+                    // Manejar el caso en el que la variable no se haya encontrado en los diccionarios
+                    Console.WriteLine("Variable no encontrada.");
+                }
             }
 
             if (context.actPars() != null)
@@ -258,6 +290,7 @@ namespace miniChartAlpha.Logica
 
             return null;
         }
+
 
         public override object VisitIfStatementAST(MiniCSharpParser.IfStatementASTContext context)
         {
@@ -690,13 +723,13 @@ namespace miniChartAlpha.Logica
             }
             else if (context.GREATOREQUALS() != null)
             {
-                currentIL.Emit(OpCodes.Clt);
+                currentIL.Emit(OpCodes.Cgt);
                 currentIL.Emit(OpCodes.Ldc_I4_0);
                 currentIL.Emit(OpCodes.Ceq);
             }
             else if (context.LESSOREQUALS() != null)
             {
-                currentIL.Emit(OpCodes.Cgt);
+                currentIL.Emit(OpCodes.Clt);
                 currentIL.Emit(OpCodes.Ldc_I4_0);
                 currentIL.Emit(OpCodes.Ceq);
             }

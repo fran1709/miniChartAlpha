@@ -9,7 +9,9 @@ namespace miniChartAlpha.Logica
 
         void ejecutar()
         {
-            int x;
+            int x, y;
+            x = 10;
+            y = 25;
             Console.WriteLine(false);
         }
     }

@@ -1,12 +1,15 @@
 class Prueba
 {
+    //int a;
     void hola ()
     {
     }
 	void main ()
     {
-       int x,y,z,f,m;
+       int x,y;
        x = 10;
+       y = 25;
+       write(y);
        write(10);
        write("Hola Mundo");
        write('a');
